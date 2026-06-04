@@ -1,0 +1,32 @@
+{
+  "articles": [
+    {
+      "source": "Reuters",
+      "author": "Test Author",
+      "title": "NVDA Posts Record Quarter on AI Chip Demand",
+      "url": "https://fixture.reuters.com/test/nvda",
+      "published_at": "2024-01-10T08:00:00+00:00",
+      "fetched_at": "2024-01-10T09:00:00+00:00",
+      "summary": "NVIDIA Q4 revenue $22B, beats $20B consensus.",
+      "content_hash": "fixture_nvda_001",
+      "tickers_mentioned": ["NVDA"],
+      "assets_mentioned": ["NVDA"],
+      "raw_text": "NVIDIA Corporation reported record Q4 revenue driven by H100 GPU demand.",
+      "credibility_score": 0.9
+    },
+    {
+      "source": "Bloomberg",
+      "author": "Macro Desk",
+      "title": "Fed Signals Rate Path Unchanged",
+      "url": "https://fixture.bloomberg.com/test/fed",
+      "published_at": "2024-01-10T06:00:00+00:00",
+      "fetched_at": "2024-01-10T09:00:00+00:00",
+      "summary": "Fed unchanged at 5.25-5.50%.",
+      "content_hash": "fixture_fed_001",
+      "tickers_mentioned": ["SPY", "TLT"],
+      "assets_mentioned": ["SPY", "TLT"],
+      "raw_text": "The Federal Reserve signaled no rate changes for Q1.",
+      "credibility_score": 0.9
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+# Signal scoring weights — sum of weights should equal 1.0
+# Adjust these without changing code to tune the model.
+
+weights:
+  market_trend:      0.20   # price trend, momentum, MA alignment
+  momentum:          0.10   # short-term price momentum
+  volume:            0.08   # volume confirmation
+  volatility:        0.05   # negative: high vol penalizes confidence
+  news_sentiment:    0.18   # aggregated news sentiment score
+  social_sentiment:  0.10   # aggregated social/Reddit sentiment
+  macro_alignment:   0.12   # macro regime alignment (rates, growth, inflation)
+  fundamental:       0.10   # P/E, earnings, revenue growth where available
+  event_catalyst:    0.07   # upcoming catalysts, earnings, announcements
+
+# Penalties (subtracted from composite score)
+penalties:
+  risk_penalty:         0.15   # multiplier for risk flag count
+  contradiction:        0.10   # applied when signals conflict across sources
+  low_confidence:       0.05   # applied when source count < min_evidence_count
+
+# Thresholds
+thresholds:
+  min_evidence_count: 2          # minimum evidence items required for valid signal
+  high_volatility_vol: 0.40      # annualised vol above this triggers risk flag
+  spam_score_max: 0.60           # posts above this are excluded from sentiment
+  credibility_min: 0.30          # sources below this weight is reduced
+
+# Horizons
+horizons:
+  intraday:
+    market_trend_lookback_days: 1
+    news_lookback_hours: 6
+  swing:
+    market_trend_lookback_days: 10
+    news_lookback_hours: 72
+  long_term:
+    market_trend_lookback_days: 60
+    news_lookback_hours: 720

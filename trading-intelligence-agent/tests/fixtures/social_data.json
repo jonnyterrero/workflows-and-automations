@@ -1,0 +1,34 @@
+{
+  "posts": [
+    {
+      "platform": "reddit",
+      "source_community": "r/investing",
+      "author_hash": "fixture_user_001",
+      "url": "https://reddit.com/fixture/post1",
+      "posted_at": "2024-01-10T07:00:00+00:00",
+      "fetched_at": "2024-01-10T09:00:00+00:00",
+      "text": "Long-term bullish on NVDA — AI capex cycle is structural and supply constrained.",
+      "tickers_mentioned": ["NVDA"],
+      "assets_mentioned": ["NVDA"],
+      "engagement_score": 0.75,
+      "credibility_score": 0.65,
+      "sentiment_score": 0.80,
+      "toxicity_or_spam_score": 0.03
+    },
+    {
+      "platform": "reddit",
+      "source_community": "r/wallstreetbets",
+      "author_hash": "fixture_user_002",
+      "url": "https://reddit.com/fixture/post2",
+      "posted_at": "2024-01-10T05:00:00+00:00",
+      "fetched_at": "2024-01-10T09:00:00+00:00",
+      "text": "TSLA puts printing money. Bears are finally right. EV demand collapsing.",
+      "tickers_mentioned": ["TSLA"],
+      "assets_mentioned": ["TSLA"],
+      "engagement_score": 0.60,
+      "credibility_score": 0.25,
+      "sentiment_score": -0.70,
+      "toxicity_or_spam_score": 0.25
+    }
+  ]
+}

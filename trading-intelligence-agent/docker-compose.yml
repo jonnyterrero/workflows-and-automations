@@ -1,0 +1,81 @@
+version: "3.9"
+
+# =============================================================================
+# Trading Intelligence Agent — Local Dev Compose
+# Firebase Firestore replaces the database service.
+# For local development, use the Firebase Local Emulator Suite.
+# =============================================================================
+
+x-common: &common
+  build:
+    context: .
+    dockerfile: infra/docker/Dockerfile.base
+  env_file: .env
+  environment:
+    - PYTHONPATH=/app
+    - FIRESTORE_EMULATOR_HOST=firebase-emulator:8080
+  volumes:
+    - .:/app
+  restart: unless-stopped
+
+services:
+
+  # ── Firebase Local Emulator (replaces postgres for local dev) ────────────
+  firebase-emulator:
+    image: andreysenov/firebase-tools:latest
+    command: >
+      firebase emulators:start
+      --only firestore
+      --project demo-trading-intel
+    ports:
+      - "8080:8080"   # Firestore
+      - "4000:4000"   # Emulator UI
+    volumes:
+      - ./config/firebase.json:/home/node/firebase.json
+      - firebase_data:/home/node/.cache/firebase/emulators
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── API Service ───────────────────────────────────────────────────────────
+  api:
+    <<: *common
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    command: uvicorn apps.api_service.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    depends_on:
+      firebase-emulator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Scheduler Service ─────────────────────────────────────────────────────
+  scheduler:
+    <<: *common
+    command: python -m apps.scheduler_service.main
+    depends_on:
+      firebase-emulator:
+        condition: service_healthy
+
+  # ── Worker Service (AI research) ──────────────────────────────────────────
+  worker:
+    <<: *common
+    command: python -m apps.worker_service.main
+    depends_on:
+      firebase-emulator:
+        condition: service_healthy
+
+volumes:
+  firebase_data:
+
+networks:
+  default:
+    name: trading_intel_net

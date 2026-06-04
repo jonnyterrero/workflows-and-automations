@@ -1,0 +1,54 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "market_prices",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "symbol", "order": "ASCENDING"},
+        {"fieldPath": "interval", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "ASCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "news_articles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "tickers_mentioned", "arrayConfig": "CONTAINS"},
+        {"fieldPath": "fetched_at", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "social_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "tickers_mentioned", "arrayConfig": "CONTAINS"},
+        {"fieldPath": "fetched_at", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "social_posts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "fetched_at", "order": "ASCENDING"},
+        {"fieldPath": "engagement_score", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "macro_indicators",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "name", "order": "ASCENDING"},
+        {"fieldPath": "timestamp", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "signals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "asset_id", "order": "ASCENDING"},
+        {"fieldPath": "created_at", "order": "DESCENDING"}
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

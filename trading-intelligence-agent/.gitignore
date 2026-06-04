@@ -1,0 +1,40 @@
+# Secrets — NEVER commit these
+.env
+config/firebase-service-account*.json
+*-service-account*.json
+*.pem
+*.key
+
+# Database files
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+
+# Test/coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Firebase emulator data
+.cache/
+firebase-debug.log
+firestore-debug.log
+
+# IDE
+.cursor/
+.vscode/
+.idea/

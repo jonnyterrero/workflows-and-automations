@@ -23,6 +23,7 @@ from packages.data_providers.demo.social import DemoSocialProvider
 from packages.data_providers.live.alpha_vantage import AlphaVantageMarketProvider
 from packages.data_providers.live.alpha_vantage_crypto import AlphaVantageCryptoProvider
 from packages.data_providers.live.crypto_rss_news import CryptoRssNewsProvider
+from packages.data_providers.live.crypto_feeds_catalog import catalog_summary, load_crypto_rss_catalog
 from packages.data_providers.live.fred import FredMacroProvider
 from packages.data_providers.live.newsapi import NewsApiProvider
 from packages.data_providers.live.reddit_social import RedditSocialProvider
@@ -133,4 +134,5 @@ def provider_status() -> dict[str, Any]:
         "social": social,
         "x_api": x_cfg,
         "filings": "edgar",
+        "crypto_source_catalog": catalog_summary() if not demo else None,
     }

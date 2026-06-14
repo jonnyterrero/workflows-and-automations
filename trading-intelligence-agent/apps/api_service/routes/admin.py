@@ -16,6 +16,7 @@ from packages.data_providers.factory import (
     get_social_providers,
     provider_status,
 )
+from packages.data_providers.live.crypto_feeds_catalog import catalog_summary
 from packages.data_providers.live.x_setup import get_x_config, verify_x_bearer
 from packages.market_data.collector import MarketDataCollector
 from packages.macro_data.collector import MacroDataCollector
@@ -34,6 +35,12 @@ DEFAULT_WATCHLIST = os.getenv(
 DEFAULT_CRYPTO_WATCHLIST = os.getenv(
     "DEFAULT_CRYPTO_WATCHLIST", "BTC-USD,ETH-USD,SOL-USD"
 ).split(",")
+
+
+@router.get("/crypto-sources")
+async def crypto_sources_catalog() -> dict:
+    """Curated crypto RSS catalog + pending API integrations (Glassnode, DeFiLlama, etc.)."""
+    return catalog_summary()
 
 
 @router.get("/setup/x")

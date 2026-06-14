@@ -15,7 +15,12 @@ from packages.data_providers.base import (
     ProviderConfig,
     ProviderError,
 )
-from packages.data_providers.live.x_setup import build_crypto_search_query, build_equity_search_query
+from packages.data_providers.live.x_setup import (
+    build_crypto_search_query,
+    build_equity_search_query,
+    get_x_bearer_token,
+    normalize_x_bearer_token,
+)
 
 logger = structlog.get_logger()
 
@@ -30,7 +35,7 @@ class XSocialProvider(BaseSocialProvider):
     """
 
     def __init__(self, bearer_token: str | None = None) -> None:
-        token = bearer_token or os.getenv("X_BEARER_TOKEN", "")
+        token = get_x_bearer_token() if bearer_token is None else normalize_x_bearer_token(bearer_token)
         super().__init__(ProviderConfig(
             name="x_twitter",
             api_key=token or None,

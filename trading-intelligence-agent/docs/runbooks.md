@@ -95,4 +95,6 @@ docker-compose down -v
 
 **LLM returns demo response**: Set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` in `.env` and `DEMO_MODE=false`.
 
+**X/Twitter ingestion empty (known blocker)**: Bearer token must be copied from developer.x.com → App → Keys and tokens → **Bearer Token** (not API Key). Paste raw token into `.env` (`+` and `=` are OK; avoid URL-encoded `%2B`/`%3D` from browser links). Verify with `GET /admin/setup/x` and `POST /admin/setup/x/verify`. If 401 persists, regenerate the bearer token in the portal. Reddit + crypto RSS still work without X.
+
 **Migration fails**: Run `make reset-db` to drop and recreate the database.

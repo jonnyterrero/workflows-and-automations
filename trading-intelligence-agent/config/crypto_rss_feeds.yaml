@@ -1,0 +1,124 @@
+# Curated crypto intelligence RSS catalog
+# Sources without public RSS are listed under api_integrations for future wiring.
+# Reliability scores from your source quality framework (1-10 → credibility 0.1-0.95)
+
+rss_feeds:
+  breaking_news:
+    - name: CoinDesk
+      url: https://www.coindesk.com/arc/outboundfeeds/rss/
+      reliability: 8
+      monitor: daily
+    - name: The Block
+      url: https://www.theblock.co/rss.xml
+      reliability: 9
+      monitor: daily
+    - name: Bloomberg Crypto
+      url: https://feeds.bloomberg.com/crypto/news.rss
+      reliability: 10
+      monitor: daily
+    - name: Reuters Digital Assets
+      url: https://www.reuters.com/arc/outboundfeeds/newsroom/category/cryptocurrency/
+      reliability: 9
+      monitor: intraday
+    - name: Cointelegraph
+      url: https://cointelegraph.com/rss
+      reliability: 7
+      monitor: daily
+    - name: Decrypt
+      url: https://decrypt.co/feed
+      reliability: 7
+      monitor: daily
+    - name: Bitcoin Magazine
+      url: https://bitcoinmagazine.com/.rss/full/
+      reliability: 7
+      monitor: weekly
+    - name: CryptoSlate
+      url: https://cryptoslate.com/feed/
+      reliability: 7
+      monitor: daily
+    - name: Blockworks
+      url: https://blockworks.co/feed
+      reliability: 9
+      monitor: daily
+
+  security_exploits:
+    - name: Immunefi Blog
+      url: https://immunefi.com/blog/rss.xml
+      reliability: 9
+      monitor: event_driven
+    - name: Rekt News
+      url: https://rekt.news/feed/
+      reliability: 8
+      monitor: weekly
+
+  regulatory_policy:
+    - name: SEC Press Releases
+      url: https://www.sec.gov/rss/news/pressreleases.xml
+      reliability: 10
+      monitor: event_driven
+    - name: CFTC Press Releases
+      url: https://www.cftc.gov/feed
+      reliability: 10
+      monitor: event_driven
+
+  protocol_development:
+    - name: Ethereum Foundation Blog
+      url: https://blog.ethereum.org/feed.xml
+      reliability: 10
+      monitor: weekly
+    - name: Uniswap Governance
+      url: https://gov.uniswap.org/latest.rss
+      reliability: 9
+      monitor: event_driven
+
+# Paid / API-only sources — not scraped; register keys to enable later
+api_integrations:
+  on_chain:
+    - name: Glassnode
+      url: https://glassnode.com
+      reliability: 9
+      env_key: GLASSNODE_API_KEY
+    - name: Nansen
+      url: https://nansen.ai
+      reliability: 8
+      env_key: NANSEN_API_KEY
+    - name: CryptoQuant
+      url: https://cryptoquant.com
+      reliability: 8
+      env_key: CRYPTOQUANT_API_KEY
+    - name: Santiment
+      url: https://santiment.net
+      reliability: 8
+      env_key: SANTIMENT_API_KEY
+  defi_fundamentals:
+    - name: DeFiLlama
+      url: https://defillama.com
+      reliability: 9
+      note: public_api_available
+    - name: Token Terminal
+      url: https://tokenterminal.com
+      reliability: 9
+      env_key: TOKEN_TERMINAL_API_KEY
+  derivatives:
+    - name: CoinGlass
+      url: https://www.coinglass.com
+      reliability: 8
+      note: public_api_limited
+    - name: Laevitas
+      url: https://www.laevitas.ch
+      reliability: 9
+      env_key: LAEVITAS_API_KEY
+  etf_flows:
+    - name: Blockworks Crypto ETF Dashboard
+      url: https://blockworks.com/analytics/crypto-etfs/bitcoin-etfs
+      reliability: 9
+      note: dashboard_no_rss
+    - name: BTC ETF Fund Flow
+      url: https://btcetffundflow.com
+      reliability: 7
+      note: dashboard_no_rss
+  compliance:
+    - name: Chainalysis
+      url: https://www.chainalysis.com
+      reliability: 10
+      note: reports_only_public

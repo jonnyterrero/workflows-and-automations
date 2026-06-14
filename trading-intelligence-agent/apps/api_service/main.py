@@ -4,13 +4,16 @@ from __future__ import annotations
 import os
 import time
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
+from apps.api_service.routes import admin, assets, backtest, market, news, portfolio, research, risk, signals
+from packages.data_providers.factory import provider_status
 from packages.observability.logging import configure_logging
-from packages.storage.firebase_db import create_tables, _init_firebase
+from packages.storage.database import create_tables
 
+load_dotenv()
 configure_logging("api-service")
 
 DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
@@ -42,7 +45,7 @@ _startup_time = time.time()
 
 @app.on_event("startup")
 async def startup() -> None:
-    _init_firebase()  # connect to Firestore (emulator or production)
+    await create_tables()
 
 
 @app.get("/health", tags=["System"])
@@ -51,6 +54,7 @@ async def health() -> dict:
         "status": "ok",
         "version": VERSION,
         "demo_mode": DEMO_MODE,
+        "providers": provider_status(),
         "uptime_seconds": round(time.time() - _startup_time, 1),
     }
 
@@ -68,16 +72,11 @@ async def metrics() -> dict:
         "demo_mode": DEMO_MODE,
     }
 
-
-# Import and register all route modules
-from apps.api_service.routes import (  # noqa: E402
-    assets, market, news, signals, research, risk, backtest, admin,
-)
-
 app.include_router(assets.router, prefix="/assets", tags=["Assets"])
 app.include_router(market.router, prefix="/market", tags=["Market Data"])
 app.include_router(news.router, prefix="/news", tags=["News & Social"])
 app.include_router(signals.router, prefix="/signals", tags=["Signals"])
+app.include_router(portfolio.router, prefix="/api/portfolio", tags=["Portfolio Policy"])
 app.include_router(research.router, prefix="/research", tags=["Research"])
 app.include_router(risk.router, prefix="/risk", tags=["Risk"])
 app.include_router(backtest.router, prefix="/backtest", tags=["Backtesting"])

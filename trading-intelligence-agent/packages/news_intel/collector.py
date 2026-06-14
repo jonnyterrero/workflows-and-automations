@@ -96,6 +96,61 @@ class NewsCollector:
         generic_symbols = ["market", "S&P", "Federal Reserve", "economy", "inflation"]
         return await self.collect_for_watchlist(generic_symbols, hours_back=hours_back)
 
+    async def collect_crypto_headlines(self, hours_back: int = 48) -> dict[str, Any]:
+        """Sweep crypto-specific RSS and NewsAPI headlines (not symbol-filtered)."""
+        summary: dict[str, Any] = {}
+        async with self.db_factory() as db:
+            raw_repo = RawPayloadRepository(db)
+            news_repo = NewsRepository(db)
+            for provider in self.providers:
+                t0 = time.monotonic()
+                fetched = new_count = dup_count = errors = 0
+                try:
+                    if hasattr(provider, "fetch_crypto_articles"):
+                        articles = await provider.fetch_crypto_articles(limit=20, hours_back=hours_back)
+                    elif provider.config.name == "crypto_rss_news":
+                        articles = await provider.fetch_articles(query="", limit=30, hours_back=hours_back)
+                    else:
+                        continue
+
+                    for raw_art in articles:
+                        fetched += 1
+                        enriched = self._enrich(dict(raw_art))
+                        try:
+                            await raw_repo.store(
+                                provider.config.name, "news_article",
+                                enriched.get("url", "unknown"),
+                                {"title": enriched.get("title"), "url": enriched.get("url")},
+                            )
+                            _, created = await news_repo.upsert_by_hash(enriched)
+                            if created:
+                                new_count += 1
+                            else:
+                                dup_count += 1
+                        except Exception as exc:  # noqa: BLE001
+                            errors += 1
+                            logger.warning("crypto_news_upsert_failed", error=str(exc))
+
+                    ms = int((time.monotonic() - t0) * 1000)
+                    logger.info(
+                        "crypto_news_collected",
+                        provider=provider.config.name,
+                        fetched=fetched, new=new_count, dupes=dup_count, errors=errors, ms=ms,
+                    )
+                    summary[provider.config.name] = {
+                        "articles_fetched": fetched,
+                        "new_articles": new_count,
+                        "duplicate_articles": dup_count,
+                        "errors": errors,
+                    }
+                except Exception as exc:  # noqa: BLE001
+                    summary[provider.config.name] = {
+                        "articles_fetched": 0, "new_articles": 0,
+                        "duplicate_articles": 0, "errors": 1, "error": str(exc),
+                    }
+            await db.commit()
+        return summary
+
     async def compute_symbol_sentiment(
         self, symbol: str, db: Any, hours_back: int = 48,
     ) -> dict[str, Any]:

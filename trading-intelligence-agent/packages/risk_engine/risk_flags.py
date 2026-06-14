@@ -18,6 +18,7 @@ class RiskEngine:
         db: Any,
     ) -> list[str]:
         flags: list[str] = []
+        asset_kind = asset_class.lower()
 
         # Volatility
         if annualized_vol and annualized_vol > 0.40:
@@ -45,11 +46,11 @@ class RiskEngine:
                 flags.append("High-credibility negative news: regulatory/fraud/default risk detected")
 
         # Macro headwinds (bond/rate sensitive)
-        if asset_class in ("bond", "bond_etf"):
+        if asset_kind in ("bond", "bond_etf", "cash_equivalent"):
             flags.append("Rate sensitivity: Bond ETFs carry duration risk in rising-rate environments")
 
         # Crypto-specific
-        if asset_class == "crypto":
+        if asset_kind == "crypto":
             if annualized_vol and annualized_vol > 0.80:
                 flags.append("Crypto extreme volatility: >80% annualized vol")
             if social_posts:
@@ -84,15 +85,16 @@ class RiskEngine:
     ) -> list[str]:
         """Synchronous version for use in signal scoring without DB access."""
         flags: list[str] = []
+        asset_kind = asset_class.lower()
         if annualized_vol and annualized_vol > 0.40:
             flags.append(f"High volatility: {annualized_vol:.1%} annualized")
         if spam_ratio > 0.4:
             flags.append("Social hype spike: high spam/hype post ratio")
         if avg_social_sentiment > 0.8:
             flags.append("Extreme positive social sentiment — pump risk")
-        if asset_class in ("bond", "bond_etf"):
+        if asset_kind in ("bond", "bond_etf", "cash_equivalent"):
             flags.append("Duration/rate sensitivity risk for bond assets")
-        if asset_class == "crypto":
+        if asset_kind == "crypto":
             if annualized_vol and annualized_vol > 0.80:
                 flags.append("Crypto extreme volatility (>80% annualized)")
         rsi = technicals.get("rsi_14")

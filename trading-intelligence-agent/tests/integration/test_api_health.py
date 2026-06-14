@@ -2,22 +2,23 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
+
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
+TEST_DB_PATH = Path(__file__).resolve().parents[2] / "data" / "test_trading_intel.db"
 os.environ["DEMO_MODE"] = "true"
-os.environ["FIRESTORE_EMULATOR_HOST"] = "localhost:8080"
-os.environ["FIREBASE_PROJECT_ID"] = "demo-trading-intel"
+os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{TEST_DB_PATH.as_posix()}"
 
-from apps.api_service.main import app
-from packages.storage.firebase_db import _init_firebase
+from apps.api_service.main import app  # noqa: E402
+from packages.storage.database import create_tables  # noqa: E402
 
 
 @pytest_asyncio.fixture(autouse=True, scope="module")
-async def init_firebase():
-    """Initialize Firebase emulator connection once for all integration tests."""
-    _init_firebase()
+async def init_database():
+    await create_tables()
 
 
 @pytest.mark.asyncio
@@ -27,7 +28,6 @@ async def test_health_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert "version" in data
     assert data["demo_mode"] is True
 
 

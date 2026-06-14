@@ -17,8 +17,10 @@ logger = structlog.get_logger()
 
 DEMO_MODE: bool = os.getenv("DEMO_MODE", "false").lower() == "true"
 EDGAR_USER_AGENT: str = os.getenv(
-    "EDGAR_USER_AGENT", "trading-intelligence-agent/0.1 (research@example.com)"
+    "EDGAR_USER_AGENT", "trading-intelligence-agent/0.1 (dijinvestments3@gmail.com)"
 )
+_COMPANY_TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
+_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik}.json"
 _NOW = datetime.now(tz=timezone.utc)
 
 _DEMO_FILINGS: list[dict[str, Any]] = [
@@ -93,6 +95,29 @@ class EDGARFilingsProvider(BaseFilingsProvider):
         ))
         self._log = logger.bind(provider="edgar")
 
+    async def _headers(self) -> dict[str, str]:
+        return {"User-Agent": EDGAR_USER_AGENT, "Accept": "application/json"}
+
+    @retry(
+        retry=retry_if_exception_type(ProviderError),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=0.5, max=30),
+        reraise=True,
+    )
+    async def _resolve_cik(self, symbol: str) -> str | None:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(_COMPANY_TICKERS_URL, headers=await self._headers())
+            if response.status_code == 429:
+                raise ProviderError("EDGAR rate limit")
+            response.raise_for_status()
+            data = response.json()
+
+        target = symbol.upper()
+        for entry in data.values():
+            if str(entry.get("ticker", "")).upper() == target:
+                return str(entry.get("cik_str", "")).zfill(10)
+        return None
+
     @retry(
         retry=retry_if_exception_type(ProviderError),
         stop=stop_after_attempt(3),
@@ -100,16 +125,17 @@ class EDGARFilingsProvider(BaseFilingsProvider):
         reraise=True,
     )
     async def _fetch_live(
-        self, symbol: str, filing_type: str, start_date: str, end_date: str,
+        self, symbol: str, filing_types: list[str], limit: int,
     ) -> list[dict[str, Any]]:
-        params = {"q": f'"{symbol}"', "forms": filing_type,
-                  "dateRange": "custom", "startdt": start_date, "enddt": end_date}
+        cik = await self._resolve_cik(symbol)
+        if not cik:
+            self._log.warning("edgar_cik_not_found", symbol=symbol)
+            return []
+
+        url = _SUBMISSIONS_URL.format(cik=cik)
         async with httpx.AsyncClient(timeout=30.0) as client:
             try:
-                response = await client.get(
-                    self.config.base_url, params=params,
-                    headers={"User-Agent": EDGAR_USER_AGENT},
-                )
+                response = await client.get(url, headers=await self._headers())
                 if response.status_code == 429:
                     raise ProviderError("EDGAR rate limit")
                 response.raise_for_status()
@@ -119,17 +145,34 @@ class EDGARFilingsProvider(BaseFilingsProvider):
             except Exception as exc:
                 raise ProviderError(f"EDGAR request error: {exc}") from exc
 
-        return [
-            {
-                "company_symbol": symbol,
-                "filing_type": h.get("_source", {}).get("form_type", filing_type),
-                "filed_at": h.get("_source", {}).get("file_date", ""),
-                "url": f"https://www.sec.gov{h.get('_source', {}).get('file_date', '')}",
-                "accession_number": h.get("_source", {}).get("accession_no", ""),
+        recent = data.get("filings", {}).get("recent", {})
+        forms = recent.get("form", [])
+        dates = recent.get("filingDate", [])
+        accessions = recent.get("accessionNumber", [])
+        primary_docs = recent.get("primaryDocument", [])
+
+        filings: list[dict[str, Any]] = []
+        for i, form in enumerate(forms):
+            if form not in filing_types:
+                continue
+            accession = accessions[i].replace("-", "")
+            primary = primary_docs[i] if i < len(primary_docs) else ""
+            filed_at = dates[i] if i < len(dates) else ""
+            doc_url = (
+                f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accession}/{primary}"
+                if primary else f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={cik}"
+            )
+            filings.append({
+                "company_symbol": symbol.upper(),
+                "filing_type": form,
+                "filed_at": f"{filed_at}T00:00:00+00:00" if filed_at else "",
+                "url": doc_url,
+                "accession_number": accessions[i] if i < len(accessions) else "",
                 "text": "", "summary": "", "risk_items": [],
-            }
-            for h in data.get("hits", {}).get("hits", [])
-        ]
+            })
+            if len(filings) >= limit:
+                break
+        return filings
 
     async def fetch_recent_filings(
         self, symbol: str, filing_types: list[str] | None = None, limit: int = 10,
@@ -141,13 +184,8 @@ class EDGARFilingsProvider(BaseFilingsProvider):
                 if f["company_symbol"].upper() == symbol.upper() and f["filing_type"] in ftypes
             ]
             return results[:limit]
-        end = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
-        start = (datetime.now(tz=timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%d")
-        all_filings: list[dict[str, Any]] = []
-        for ft in ftypes:
-            try:
-                all_filings.extend(await self._fetch_live(symbol, ft, start, end))
-            except ProviderError as exc:
-                self._log.error("edgar_failed", symbol=symbol, ft=ft, error=str(exc))
-        all_filings.sort(key=lambda f: f.get("filed_at", ""), reverse=True)
-        return all_filings[:limit]
+        try:
+            return await self._fetch_live(symbol, ftypes, limit)
+        except ProviderError as exc:
+            self._log.error("edgar_failed", symbol=symbol, error=str(exc))
+            return []

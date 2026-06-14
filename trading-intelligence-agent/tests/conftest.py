@@ -2,25 +2,31 @@
 from __future__ import annotations
 
 import os
-import pytest
+from pathlib import Path
+
 import pytest_asyncio
 
-# Use Firestore emulator for all tests
+TEST_DB_PATH = Path(__file__).resolve().parents[1] / "data" / "test_trading_intel.db"
+TEST_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
 os.environ.setdefault("DEMO_MODE", "true")
-os.environ.setdefault("FIRESTORE_EMULATOR_HOST", "localhost:8080")
-os.environ.setdefault("FIREBASE_PROJECT_ID", "demo-trading-intel")
+os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{TEST_DB_PATH.as_posix()}")
 os.environ.setdefault("LOG_LEVEL", "WARNING")
 
 
-@pytest_asyncio.fixture(scope="session")
-async def firebase_init():
-    """Initialize Firebase once for the test session."""
-    from packages.storage.firebase_db import _init_firebase
-    _init_firebase()
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def init_database():
+    from packages.storage.database import create_tables
+
+    if TEST_DB_PATH.exists():
+        TEST_DB_PATH.unlink()
+    await create_tables()
+    yield
 
 
 @pytest_asyncio.fixture
-async def db_session(firebase_init):
-    """Provide a Firestore client per test."""
-    from packages.storage.firebase_db import get_firestore_client
-    return get_firestore_client()
+async def db_session(init_database):
+    from packages.storage.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as session:
+        yield session

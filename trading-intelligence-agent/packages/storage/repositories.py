@@ -1,26 +1,32 @@
-"""Firestore repositories — CRUD operations for all collections.
-
-Collection layout:
-  assets/{symbol}
-  watchlist/{symbol}
-  market_prices/{symbol}_{timestamp_iso}_{interval}
-  news_articles/{content_hash}
-  social_posts/{auto_id}
-  macro_indicators/{name}_{timestamp_iso}
-  filing_documents/{accession_number}
-  signals/{auto_id}
-  raw_payloads/{payload_hash}
-  daily_briefings/{date_str}
-  asset_research_reports/{asset_id}_{date_str}
-"""
+"""SQLAlchemy repositories for the trading intelligence agent."""
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
-import xxhash
 import structlog
+import xxhash
+from sqlalchemy import delete, desc, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from packages.core_models.db_tables import (
+    AssetTable,
+    DailyBriefingTable,
+    MacroIndicatorTable,
+    MarketPriceTable,
+    NewsArticleTable,
+    PortfolioPolicyRuleTable,
+    PortfolioPositionTable,
+    PortfolioProfileTable,
+    RawPayloadTable,
+    SignalTable,
+    SocialPostTable,
+    WatchlistTable,
+)
+from packages.policy.models import PolicyRule, PortfolioPosition, PortfolioProfile
 
 logger = structlog.get_logger()
 
@@ -29,294 +35,198 @@ def _now() -> datetime:
     return datetime.now(tz=timezone.utc)
 
 
-def _hash_payload(data: dict | str) -> str:
+def _hash_payload(data: dict[str, Any] | str) -> str:
     if isinstance(data, dict):
         data = json.dumps(data, sort_keys=True, default=str)
     return xxhash.xxh64(data.encode()).hexdigest()
 
 
-def _to_dt(val: Any) -> datetime | None:
-    """Coerce Firestore Timestamp, ISO string, or datetime to datetime."""
-    if val is None:
+def _to_datetime(value: Any) -> datetime | None:
+    if value is None:
         return None
-    if isinstance(val, datetime):
-        return val if val.tzinfo else val.replace(tzinfo=timezone.utc)
-    # Firestore DatetimeWithNanoseconds has .timestamp_pb()
-    if hasattr(val, "ToDatetime"):
-        return val.ToDatetime().replace(tzinfo=timezone.utc)
-    if isinstance(val, str):
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, date):
+        return datetime.combine(value, datetime.min.time(), tzinfo=timezone.utc)
+    if isinstance(value, str):
         try:
-            dt = datetime.fromisoformat(val.replace("Z", "+00:00"))
-            return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
         except ValueError:
-            return _now()
-    return _now()
+            return None
+    return None
 
 
-# ---------------------------------------------------------------------------
-# Tiny data classes that mirror the ORM rows that routes/services expect
-# ---------------------------------------------------------------------------
-
-class _Row:
-    """Generic attribute container — mimics SQLAlchemy row interface."""
-    def __init__(self, **kwargs: Any) -> None:
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-    def __repr__(self) -> str:
-        return f"<Row {self.__dict__}>"
+def _json_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    return list(value)
 
 
-def _asset_row(data: dict, doc_id: str) -> _Row:
-    return _Row(
-        id=data.get("id") or doc_id,
-        symbol=data.get("symbol", doc_id),
-        name=data.get("name", ""),
-        asset_class=data.get("asset_class", "stock"),
-        exchange=data.get("exchange"),
-        currency=data.get("currency", "USD"),
-        sector=data.get("sector"),
-        industry=data.get("industry"),
-        metadata_json=data.get("metadata_json", {}),
-        is_active=data.get("is_active", True),
-        created_at=_to_dt(data.get("created_at")),
-        updated_at=_to_dt(data.get("updated_at")),
-    )
+async def _commit_refresh(db: AsyncSession, row: Any) -> Any:
+    await db.commit()
+    await db.refresh(row)
+    return row
 
 
-def _price_row(data: dict, doc_id: str) -> _Row:
-    return _Row(
-        id=doc_id,
-        asset_id=data.get("asset_id"),
-        timestamp=_to_dt(data.get("timestamp")),
-        open=data.get("open"),
-        high=data.get("high"),
-        low=data.get("low"),
-        close=data.get("close", 0.0),
-        volume=data.get("volume"),
-        source=data.get("source", ""),
-        interval=data.get("interval", "1d"),
-    )
-
-
-def _news_row(data: dict, doc_id: str) -> _Row:
-    return _Row(
-        id=data.get("id") or doc_id,
-        source=data.get("source", ""),
-        author=data.get("author"),
-        title=data.get("title", ""),
-        url=data.get("url", ""),
-        published_at=_to_dt(data.get("published_at")),
-        fetched_at=_to_dt(data.get("fetched_at")),
-        summary=data.get("summary"),
-        content_hash=data.get("content_hash", doc_id),
-        tickers_mentioned=data.get("tickers_mentioned") or [],
-        assets_mentioned=data.get("assets_mentioned") or [],
-        raw_text=data.get("raw_text"),
-        credibility_score=float(data.get("credibility_score", 0.5)),
-    )
-
-
-def _social_row(data: dict, doc_id: str) -> _Row:
-    return _Row(
-        id=data.get("id") or doc_id,
-        platform=data.get("platform", ""),
-        source_community=data.get("source_community"),
-        author_hash=data.get("author_hash", ""),
-        url=data.get("url"),
-        posted_at=_to_dt(data.get("posted_at")),
-        fetched_at=_to_dt(data.get("fetched_at")),
-        text=data.get("text", ""),
-        tickers_mentioned=data.get("tickers_mentioned") or [],
-        assets_mentioned=data.get("assets_mentioned") or [],
-        engagement_score=float(data.get("engagement_score", 0.0)),
-        credibility_score=float(data.get("credibility_score", 0.5)),
-        sentiment_score=float(data.get("sentiment_score", 0.0)),
-        toxicity_or_spam_score=float(data.get("toxicity_or_spam_score", 0.0)),
-    )
-
-
-def _macro_row(data: dict, doc_id: str) -> _Row:
-    return _Row(
-        id=data.get("id") or doc_id,
-        name=data.get("name", ""),
-        timestamp=_to_dt(data.get("timestamp")),
-        value=float(data.get("value", 0.0)),
-        unit=data.get("unit", ""),
-        source=data.get("source", ""),
-        category=data.get("category", ""),
-    )
-
-
-def _signal_row(data: dict, doc_id: str) -> _Row:
-    return _Row(
-        id=data.get("id") or doc_id,
-        asset_id=data.get("asset_id"),
-        timestamp=_to_dt(data.get("timestamp")),
-        horizon=data.get("horizon", "swing"),
-        signal_type=data.get("signal_type", "composite"),
-        direction=data.get("direction", "neutral"),
-        score=float(data.get("score", 0.0)),
-        confidence=float(data.get("confidence", 0.5)),
-        evidence_ids=data.get("evidence_ids") or [],
-        reasoning=data.get("reasoning", ""),
-        counterarguments=data.get("counterarguments") or [],
-        risk_flags=data.get("risk_flags") or [],
-        created_by=data.get("created_by", "system"),
-        version=data.get("version", "1.0"),
-        created_at=_to_dt(data.get("created_at")),
-    )
-
-
-def _briefing_row(data: dict, doc_id: str) -> _Row:
-    return _Row(
-        id=data.get("id") or doc_id,
-        date=data.get("date", doc_id),
-        market_regime_summary=data.get("market_regime_summary", ""),
-        macro_summary=data.get("macro_summary", ""),
-        equity_summary=data.get("equity_summary", ""),
-        etf_summary=data.get("etf_summary", ""),
-        bond_summary=data.get("bond_summary", ""),
-        crypto_summary=data.get("crypto_summary", ""),
-        top_opportunities=data.get("top_opportunities") or [],
-        top_risks=data.get("top_risks") or [],
-        unusual_social_activity=data.get("unusual_social_activity") or [],
-        major_news_events=data.get("major_news_events") or [],
-        watchlist_changes=data.get("watchlist_changes") or [],
-        evidence_ids=data.get("evidence_ids") or [],
-        disclaimer=data.get("disclaimer", ""),
-        created_at=_to_dt(data.get("created_at")),
-    )
-
-
-# ---------------------------------------------------------------------------
-# Repository classes
-# ---------------------------------------------------------------------------
-
-class AssetRepository:
-    def __init__(self, db: Any) -> None:
+class _BaseRepository:
+    def __init__(self, db: AsyncSession) -> None:
         self.db = db
-        self._col = db.collection("assets")
-        self._wl = db.collection("watchlist")
 
-    async def get_by_id(self, asset_id: str) -> _Row | None:
-        doc = await self._col.document(str(asset_id)).get()
-        return _asset_row(doc.to_dict() or {}, doc.id) if doc.exists else None
+    async def _resolve_asset(self, asset_id: Any) -> AssetTable | None:
+        if isinstance(asset_id, int) or str(asset_id).isdigit():
+            return await self.db.get(AssetTable, int(asset_id))
+        result = await self.db.execute(
+            select(AssetTable).where(AssetTable.symbol == str(asset_id).upper())
+        )
+        return result.scalar_one_or_none()
 
-    async def get_by_symbol(self, symbol: str) -> _Row | None:
-        doc = await self._col.document(symbol.upper()).get()
-        return _asset_row(doc.to_dict() or {}, doc.id) if doc.exists else None
+    def _insert_ignore_stmt(self, model: Any, rows: list[dict[str, Any]], conflict_cols: list[str]) -> Any:
+        dialect_name = self.db.bind.dialect.name if self.db.bind else "sqlite"
+        if dialect_name == "postgresql":
+            return pg_insert(model).values(rows).on_conflict_do_nothing(index_elements=conflict_cols)
+        if dialect_name == "sqlite":
+            return sqlite_insert(model).values(rows).on_conflict_do_nothing(index_elements=conflict_cols)
+        raise RuntimeError(f"Unsupported SQL dialect for bulk upsert: {dialect_name}")
 
-    async def get_all(
-        self, asset_class: str | None = None, is_active: bool = True
-    ) -> list[_Row]:
-        q = self._col.where("is_active", "==", is_active)
+
+class AssetRepository(_BaseRepository):
+    async def get_by_id(self, asset_id: Any) -> AssetTable | None:
+        return await self._resolve_asset(asset_id)
+
+    async def get_by_symbol(self, symbol: str) -> AssetTable | None:
+        result = await self.db.execute(select(AssetTable).where(AssetTable.symbol == symbol.upper()))
+        return result.scalar_one_or_none()
+
+    async def get_all(self, asset_class: str | None = None, is_active: bool = True) -> list[AssetTable]:
+        stmt = select(AssetTable).where(AssetTable.is_active == is_active).order_by(AssetTable.symbol)
         if asset_class:
-            q = q.where("asset_class", "==", asset_class)
-        return [_asset_row(d.to_dict() or {}, d.id) async for d in q.stream()]
+            stmt = stmt.where(AssetTable.asset_class == asset_class)
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
-    async def create(self, asset: Any) -> _Row:
+    async def create(self, asset: Any) -> AssetTable:
         return await self.upsert(asset)
 
-    async def upsert(self, asset: Any) -> _Row:
-        sym = asset.symbol.upper()
+    async def upsert(self, asset: Any) -> AssetTable:
+        symbol = str(asset.symbol).upper()
+        existing = await self.get_by_symbol(symbol)
         data = {
-            "id": sym,
-            "symbol": sym,
+            "symbol": symbol,
             "name": asset.name,
             "asset_class": asset.asset_class.value if hasattr(asset.asset_class, "value") else str(asset.asset_class),
-            "exchange": asset.exchange,
+            "exchange": getattr(asset, "exchange", None),
             "currency": getattr(asset, "currency", "USD"),
             "sector": getattr(asset, "sector", None),
             "industry": getattr(asset, "industry", None),
+            "theme_tags": getattr(asset, "theme_tags", []),
+            "metadata_json": getattr(asset, "metadata", None) or getattr(asset, "metadata_json", None),
             "is_active": getattr(asset, "is_active", True),
-            "created_at": _now().isoformat(),
-            "updated_at": _now().isoformat(),
         }
-        await self._col.document(sym).set(data, merge=True)
-        return _asset_row(data, sym)
+        if existing:
+            for key, value in data.items():
+                setattr(existing, key, value)
+            return await _commit_refresh(self.db, existing)
 
-    async def get_watchlist(self) -> list[_Row]:
-        rows: list[_Row] = []
-        async for wl_doc in self._wl.stream():
-            sym = wl_doc.id
-            asset_doc = await self._col.document(sym).get()
-            if asset_doc.exists:
-                rows.append(_asset_row(asset_doc.to_dict() or {}, sym))
-        return rows
+        row = AssetTable(**data)
+        self.db.add(row)
+        return await _commit_refresh(self.db, row)
 
-    async def add_to_watchlist(self, asset_id: str, notes: str = "") -> _Row:
-        await self._wl.document(str(asset_id)).set(
-            {"asset_id": str(asset_id), "notes": notes, "added_at": _now().isoformat()},
-            merge=True,
+    async def get_watchlist(self) -> list[AssetTable]:
+        stmt = (
+            select(AssetTable)
+            .join(WatchlistTable, WatchlistTable.asset_id == AssetTable.id)
+            .order_by(AssetTable.symbol)
         )
-        return _Row(asset_id=str(asset_id), notes=notes, added_at=_now())
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
-    async def remove_from_watchlist(self, asset_id: str) -> bool:
-        doc = await self._wl.document(str(asset_id)).get()
-        if doc.exists:
-            await self._wl.document(str(asset_id)).delete()
-            return True
-        return False
+    async def add_to_watchlist(self, asset_id: Any, notes: str = "") -> WatchlistTable:
+        resolved_id = int(asset_id)
+        result = await self.db.execute(
+            select(WatchlistTable).where(WatchlistTable.asset_id == resolved_id)
+        )
+        existing = result.scalar_one_or_none()
+        if existing:
+            existing.notes = notes
+            return await _commit_refresh(self.db, existing)
+
+        row = WatchlistTable(asset_id=resolved_id, notes=notes)
+        self.db.add(row)
+        return await _commit_refresh(self.db, row)
+
+    async def remove_from_watchlist(self, asset_id: Any) -> bool:
+        result = await self.db.execute(
+            select(WatchlistTable).where(WatchlistTable.asset_id == int(asset_id))
+        )
+        row = result.scalar_one_or_none()
+        if row is None:
+            return False
+        await self.db.delete(row)
+        await self.db.commit()
+        return True
 
 
-class MarketPriceRepository:
-    def __init__(self, db: Any) -> None:
-        self.db = db
-        self._col = db.collection("market_prices")
-
-    def _doc_id(self, symbol: str, ts: str, interval: str) -> str:
-        safe_ts = ts.replace(":", "-").replace("+", "_")
-        return f"{symbol}_{safe_ts}_{interval}"
-
+class MarketPriceRepository(_BaseRepository):
     async def bulk_upsert(self, prices: list[dict[str, Any]]) -> int:
         if not prices:
             return 0
-        batch = self.db.batch()
-        count = 0
-        for p in prices:
-            symbol = p.get("symbol", "")
-            ts_raw = p.get("timestamp", "")
-            interval = p.get("interval", "1d")
-            if isinstance(ts_raw, datetime):
-                ts_str = ts_raw.isoformat()
-            else:
-                ts_str = str(ts_raw)
-            doc_id = self._doc_id(symbol, ts_str, interval)
-            ref = self._col.document(doc_id)
-            data = {
-                "asset_id": symbol,
-                "symbol": symbol,
-                "timestamp": ts_str,
-                "open": p.get("open"),
-                "high": p.get("high"),
-                "low": p.get("low"),
-                "close": float(p.get("close", 0)),
-                "volume": p.get("volume"),
-                "source": p.get("source", ""),
-                "interval": interval,
-            }
-            batch.set(ref, data, merge=False)
-            count += 1
-            if count % 400 == 0:  # Firestore batch limit is 500
-                await batch.commit()
-                batch = self.db.batch()
-        if count % 400 != 0:
-            await batch.commit()
-        return count
 
-    async def get_latest(self, asset_id: Any) -> _Row | None:
-        sym = str(asset_id)
-        docs = await (
-            self._col
-            .where("symbol", "==", sym)
-            .order_by("timestamp", direction="DESCENDING")
-            .limit(1)
-            .get()
+        symbols = {str(price.get("symbol", "")).upper() for price in prices if price.get("symbol")}
+        asset_rows = {}
+        if symbols:
+            result = await self.db.execute(select(AssetTable).where(AssetTable.symbol.in_(symbols)))
+            asset_rows = {row.symbol: row.id for row in result.scalars().all()}
+
+        rows: list[dict[str, Any]] = []
+        for price in prices:
+            symbol = str(price.get("symbol", "")).upper()
+            asset_id = price.get("asset_id") or asset_rows.get(symbol)
+            if asset_id is None:
+                continue
+            timestamp = _to_datetime(price.get("timestamp"))
+            if timestamp is None:
+                continue
+            rows.append(
+                {
+                    "asset_id": int(asset_id),
+                    "symbol": symbol or None,
+                    "timestamp": timestamp,
+                    "open": price.get("open"),
+                    "high": price.get("high"),
+                    "low": price.get("low"),
+                    "close": float(price.get("close", 0.0)),
+                    "adjusted_close": price.get("adjusted_close"),
+                    "volume": price.get("volume"),
+                    "source": str(price.get("source", "seed")),
+                    "interval": str(price.get("interval", "1d")),
+                }
+            )
+
+        if not rows:
+            return 0
+
+        await self.db.execute(
+            self._insert_ignore_stmt(
+                MarketPriceTable,
+                rows,
+                ["asset_id", "timestamp", "interval", "source"],
+            )
         )
-        if not docs:
+        await self.db.commit()
+        return len(rows)
+
+    async def get_latest(self, asset_id: Any) -> MarketPriceTable | None:
+        asset = await self._resolve_asset(asset_id)
+        if asset is None:
             return None
-        d = docs[0]
-        return _price_row(d.to_dict() or {}, d.id)
+        result = await self.db.execute(
+            select(MarketPriceTable)
+            .where(MarketPriceTable.asset_id == asset.id)
+            .order_by(desc(MarketPriceTable.timestamp))
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
 
     async def get_range(
         self,
@@ -324,320 +234,455 @@ class MarketPriceRepository:
         start: datetime,
         end: datetime,
         interval: str = "1d",
-    ) -> list[_Row]:
-        sym = str(asset_id)
-        start_str = start.isoformat()
-        end_str = end.isoformat()
-        docs = await (
-            self._col
-            .where("symbol", "==", sym)
-            .where("interval", "==", interval)
-            .where("timestamp", ">=", start_str)
-            .where("timestamp", "<=", end_str)
-            .order_by("timestamp")
-            .get()
+    ) -> list[MarketPriceTable]:
+        asset = await self._resolve_asset(asset_id)
+        if asset is None:
+            return []
+        result = await self.db.execute(
+            select(MarketPriceTable)
+            .where(MarketPriceTable.asset_id == asset.id)
+            .where(MarketPriceTable.interval == interval)
+            .where(MarketPriceTable.timestamp >= start)
+            .where(MarketPriceTable.timestamp <= end)
+            .order_by(MarketPriceTable.timestamp)
         )
-        return [_price_row(d.to_dict() or {}, d.id) for d in docs]
+        return list(result.scalars().all())
 
 
-class NewsRepository:
-    def __init__(self, db: Any) -> None:
-        self.db = db
-        self._col = db.collection("news_articles")
+class NewsRepository(_BaseRepository):
+    async def upsert_by_hash(self, article: dict[str, Any]) -> tuple[NewsArticleTable, bool]:
+        content_hash = str(article.get("content_hash") or _hash_payload(article))
+        result = await self.db.execute(
+            select(NewsArticleTable).where(NewsArticleTable.content_hash == content_hash)
+        )
+        existing = result.scalar_one_or_none()
+        if existing is not None:
+            return existing, False
 
-    async def upsert_by_hash(self, article: dict[str, Any]) -> tuple[_Row, bool]:
-        content_hash = article.get("content_hash", "")
-        if not content_hash:
-            content_hash = xxhash.xxh64(
-                (article.get("title", "") + article.get("url", "")).encode()
-            ).hexdigest()
+        row = NewsArticleTable(
+            source=str(article.get("source", "")),
+            author=article.get("author"),
+            title=str(article.get("title", "")),
+            url=str(article.get("url", "")),
+            published_at=_to_datetime(article.get("published_at")) or _now(),
+            fetched_at=_to_datetime(article.get("fetched_at")) or _now(),
+            summary=article.get("summary"),
+            content_hash=content_hash,
+            tickers_mentioned=_json_list(article.get("tickers_mentioned")),
+            assets_mentioned=_json_list(article.get("assets_mentioned")),
+            raw_text=article.get("raw_text"),
+            credibility_score=float(article.get("credibility_score", 0.5)),
+        )
+        self.db.add(row)
+        return await _commit_refresh(self.db, row), True
 
-        doc = await self._col.document(content_hash).get()
-        if doc.exists:
-            return _news_row(doc.to_dict() or {}, content_hash), False
+    async def get_by_symbol(self, symbol: str, limit: int = 50, hours_back: int = 72) -> list[NewsArticleTable]:
+        cutoff = _now() - timedelta(hours=hours_back)
+        result = await self.db.execute(
+            select(NewsArticleTable)
+            .where(NewsArticleTable.fetched_at >= cutoff)
+            .order_by(desc(NewsArticleTable.fetched_at))
+            .limit(max(limit * 5, limit))
+        )
+        rows = [
+            row for row in result.scalars().all()
+            if symbol.upper() in (row.tickers_mentioned or [])
+        ]
+        return rows[:limit]
 
-        data = {
-            "id": content_hash,
-            **{k: v for k, v in article.items()},
-            "fetched_at": _now().isoformat(),
-        }
-        await self._col.document(content_hash).set(data)
-        return _news_row(data, content_hash), True
-
-    async def get_by_symbol(
-        self, symbol: str, limit: int = 50, hours_back: int = 72
-    ) -> list[_Row]:
-        cutoff = (_now() - timedelta(hours=hours_back)).isoformat()
-        docs = await (
-            self._col
-            .where("tickers_mentioned", "array_contains", symbol.upper())
-            .where("fetched_at", ">=", cutoff)
-            .order_by("fetched_at", direction="DESCENDING")
+    async def get_recent(self, limit: int = 100, hours_back: int = 24) -> list[NewsArticleTable]:
+        cutoff = _now() - timedelta(hours=hours_back)
+        result = await self.db.execute(
+            select(NewsArticleTable)
+            .where(NewsArticleTable.fetched_at >= cutoff)
+            .order_by(desc(NewsArticleTable.fetched_at))
             .limit(limit)
-            .get()
         )
-        return [_news_row(d.to_dict() or {}, d.id) for d in docs]
-
-    async def get_recent(self, limit: int = 100, hours_back: int = 24) -> list[_Row]:
-        cutoff = (_now() - timedelta(hours=hours_back)).isoformat()
-        docs = await (
-            self._col
-            .where("fetched_at", ">=", cutoff)
-            .order_by("fetched_at", direction="DESCENDING")
-            .limit(limit)
-            .get()
-        )
-        return [_news_row(d.to_dict() or {}, d.id) for d in docs]
+        return list(result.scalars().all())
 
 
-class SocialPostRepository:
-    def __init__(self, db: Any) -> None:
-        self.db = db
-        self._col = db.collection("social_posts")
-
-    async def upsert(self, post: dict[str, Any]) -> tuple[_Row, bool]:
-        url = post.get("url") or ""
+class SocialPostRepository(_BaseRepository):
+    async def upsert(self, post: dict[str, Any]) -> tuple[SocialPostTable, bool]:
+        url = post.get("url")
         if url:
-            # Check by URL
-            docs = await self._col.where("url", "==", url).limit(1).get()
-            if docs:
-                d = docs[0]
-                return _social_row(d.to_dict() or {}, d.id), False
+            result = await self.db.execute(select(SocialPostTable).where(SocialPostTable.url == str(url)))
+            existing = result.scalar_one_or_none()
+            if existing is not None:
+                return existing, False
 
-        ref = self._col.document()
-        data = {"id": ref.id, **post, "fetched_at": _now().isoformat()}
-        await ref.set(data)
-        return _social_row(data, ref.id), True
-
-    async def get_by_symbol(
-        self, symbol: str, limit: int = 50, hours_back: int = 48
-    ) -> list[_Row]:
-        cutoff = (_now() - timedelta(hours=hours_back)).isoformat()
-        docs = await (
-            self._col
-            .where("tickers_mentioned", "array_contains", symbol.upper())
-            .where("fetched_at", ">=", cutoff)
-            .order_by("fetched_at", direction="DESCENDING")
-            .limit(limit)
-            .get()
+        row = SocialPostTable(
+            platform=str(post.get("platform", "")),
+            source_community=post.get("source_community"),
+            author_hash=str(post.get("author_hash", "")),
+            url=str(url) if url else None,
+            posted_at=_to_datetime(post.get("posted_at")) or _now(),
+            fetched_at=_to_datetime(post.get("fetched_at")) or _now(),
+            text=str(post.get("text", "")),
+            tickers_mentioned=_json_list(post.get("tickers_mentioned")),
+            assets_mentioned=_json_list(post.get("assets_mentioned")),
+            engagement_score=float(post.get("engagement_score", 0.0)),
+            credibility_score=float(post.get("credibility_score", 0.5)),
+            sentiment_score=float(post.get("sentiment_score", 0.0)),
+            toxicity_or_spam_score=float(post.get("toxicity_or_spam_score", 0.0)),
         )
-        return [_social_row(d.to_dict() or {}, d.id) for d in docs]
+        self.db.add(row)
+        return await _commit_refresh(self.db, row), True
 
-    async def get_trending(self, limit: int = 20, hours_back: int = 6) -> list[_Row]:
-        cutoff = (_now() - timedelta(hours=hours_back)).isoformat()
-        docs = await (
-            self._col
-            .where("fetched_at", ">=", cutoff)
-            .order_by("engagement_score", direction="DESCENDING")
-            .limit(limit)
-            .get()
+    async def get_by_symbol(self, symbol: str, limit: int = 50, hours_back: int = 48) -> list[SocialPostTable]:
+        cutoff = _now() - timedelta(hours=hours_back)
+        result = await self.db.execute(
+            select(SocialPostTable)
+            .where(SocialPostTable.fetched_at >= cutoff)
+            .order_by(desc(SocialPostTable.fetched_at))
+            .limit(max(limit * 5, limit))
         )
-        return [_social_row(d.to_dict() or {}, d.id) for d in docs]
+        rows = [
+            row for row in result.scalars().all()
+            if symbol.upper() in (row.tickers_mentioned or [])
+        ]
+        return rows[:limit]
+
+    async def get_trending(self, limit: int = 20, hours_back: int = 6) -> list[SocialPostTable]:
+        cutoff = _now() - timedelta(hours=hours_back)
+        result = await self.db.execute(
+            select(SocialPostTable)
+            .where(SocialPostTable.fetched_at >= cutoff)
+            .order_by(desc(SocialPostTable.engagement_score))
+            .limit(limit)
+        )
+        return list(result.scalars().all())
 
 
-class MacroRepository:
-    def __init__(self, db: Any) -> None:
-        self.db = db
-        self._col = db.collection("macro_indicators")
-
-    def _doc_id(self, name: str, ts: str) -> str:
-        safe_ts = ts.replace(":", "-").replace("+", "_")
-        return f"{name}_{safe_ts}"
-
+class MacroRepository(_BaseRepository):
     async def upsert(self, series_id: str, observations: list[dict[str, Any]]) -> int:
-        batch = self.db.batch()
-        count = 0
-        for obs in observations:
-            ts_raw = obs.get("observation_date", obs.get("timestamp", ""))
-            if isinstance(ts_raw, datetime):
-                ts_str = ts_raw.isoformat()
-            else:
-                ts_str = str(ts_raw)
-            doc_id = self._doc_id(series_id, ts_str)
-            data = {
-                "name": series_id,
-                "timestamp": ts_str,
-                "value": float(obs.get("value", 0.0)),
-                "unit": str(obs.get("unit", "")),
-                "source": str(obs.get("source", "")),
-                "category": str(obs.get("category", "")),
-            }
-            batch.set(self._col.document(doc_id), data, merge=False)
-            count += 1
-        await batch.commit()
-        return count
+        rows: list[dict[str, Any]] = []
+        for observation in observations:
+            timestamp = _to_datetime(
+                observation.get("observation_date") or observation.get("timestamp")
+            )
+            if timestamp is None:
+                continue
+            rows.append(
+                {
+                    "name": series_id,
+                    "timestamp": timestamp,
+                    "value": float(observation.get("value", 0.0)),
+                    "unit": str(observation.get("unit", "")),
+                    "source": str(observation.get("source", "seed")),
+                    "category": str(observation.get("category", "")),
+                }
+            )
+        if not rows:
+            return 0
+        await self.db.execute(
+            self._insert_ignore_stmt(
+                MacroIndicatorTable,
+                rows,
+                ["name", "timestamp", "source"],
+            )
+        )
+        await self.db.commit()
+        return len(rows)
 
     async def get_latest(self, name: str, limit: int = 1) -> list[dict[str, Any]]:
-        docs = await (
-            self._col
-            .where("name", "==", name)
-            .order_by("timestamp", direction="DESCENDING")
+        result = await self.db.execute(
+            select(MacroIndicatorTable)
+            .where(MacroIndicatorTable.name == name)
+            .order_by(desc(MacroIndicatorTable.timestamp))
             .limit(limit)
-            .get()
         )
-        return [d.to_dict() or {} for d in docs]
-
-    async def get_latest_by_name(self, name: str) -> _Row | None:
-        rows = await self.get_latest(name, limit=1)
-        if not rows:
-            return None
-        d = rows[0]
-        return _macro_row(d, f"{name}_latest")
-
-    async def get_series(self, name: str, limit: int = 100) -> list[_Row]:
-        docs = await (
-            self._col
-            .where("name", "==", name)
-            .order_by("timestamp", direction="DESCENDING")
-            .limit(limit)
-            .get()
-        )
-        return [_macro_row(d.to_dict() or {}, d.id) for d in docs]
-
-    async def get_all_latest(self) -> list[_Row]:
-        series_ids = [
-            "fed_funds_rate", "cpi_yoy", "gdp_growth_qoq", "unemployment_rate",
-            "10y_treasury_yield", "2y_treasury_yield", "vix", "dxy",
+        return [
+            {
+                "name": row.name,
+                "timestamp": row.timestamp,
+                "value": row.value,
+                "unit": row.unit,
+                "source": row.source,
+                "category": row.category,
+            }
+            for row in result.scalars().all()
         ]
-        rows: list[_Row] = []
-        for name in series_ids:
-            latest = await self.get_latest(name, limit=1)
-            if latest:
-                rows.append(_macro_row(latest[0], f"{name}_latest"))
+
+    async def get_latest_by_name(self, name: str) -> MacroIndicatorTable | None:
+        result = await self.db.execute(
+            select(MacroIndicatorTable)
+            .where(MacroIndicatorTable.name == name)
+            .order_by(desc(MacroIndicatorTable.timestamp))
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_series(self, name: str, limit: int = 100) -> list[MacroIndicatorTable]:
+        result = await self.db.execute(
+            select(MacroIndicatorTable)
+            .where(MacroIndicatorTable.name == name)
+            .order_by(desc(MacroIndicatorTable.timestamp))
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def get_all_latest(self) -> list[MacroIndicatorTable]:
+        series_ids = [
+            "fed_funds_rate",
+            "cpi_yoy",
+            "gdp_growth_qoq",
+            "unemployment_rate",
+            "10y_treasury_yield",
+            "2y_treasury_yield",
+            "vix",
+            "dxy",
+        ]
+        rows: list[MacroIndicatorTable] = []
+        for series_id in series_ids:
+            latest = await self.get_latest_by_name(series_id)
+            if latest is not None:
+                rows.append(latest)
         return rows
 
 
-class RawPayloadRepository:
-    def __init__(self, db: Any) -> None:
-        self.db = db
-        self._col = db.collection("raw_payloads")
-
+class RawPayloadRepository(_BaseRepository):
     async def store(
         self,
         source: str,
         payload_type: str,
         symbol: str,
         data: dict[str, Any],
-    ) -> _Row:
+    ) -> RawPayloadTable:
         payload_hash = _hash_payload(data)
-        doc = await self._col.document(payload_hash).get()
-        if doc.exists:
-            return _Row(id=payload_hash, payload_hash=payload_hash, parse_status="success")
+        result = await self.db.execute(
+            select(RawPayloadTable).where(RawPayloadTable.payload_hash == payload_hash)
+        )
+        existing = result.scalar_one_or_none()
+        if existing is not None:
+            return existing
 
-        row_data = {
-            "id": payload_hash,
-            "source": source,
-            "provider": source,
-            "endpoint": f"{payload_type}/{symbol}",
-            "fetched_at": _now().isoformat(),
-            "payload_hash": payload_hash,
-            "payload_json": data,
-            "parse_status": "success",
-        }
-        await self._col.document(payload_hash).set(row_data)
-        return _Row(**row_data)
+        row = RawPayloadTable(
+            source=source,
+            provider=source,
+            endpoint=f"{payload_type}/{symbol}",
+            fetched_at=_now(),
+            payload_hash=payload_hash,
+            payload_json=data,
+            parse_status="success",
+        )
+        self.db.add(row)
+        return await _commit_refresh(self.db, row)
 
     async def exists_by_hash(self, hash_val: str) -> bool:
-        doc = await self._col.document(hash_val).get()
-        return doc.exists
-
-    async def get_by_id(self, payload_id: str) -> _Row | None:
-        doc = await self._col.document(str(payload_id)).get()
-        if not doc.exists:
-            return None
-        d = doc.to_dict() or {}
-        return _Row(**d)
-
-    async def update_parse_status(
-        self, payload_id: str, status: Any, error: str | None = None
-    ) -> None:
-        await self._col.document(str(payload_id)).update({
-            "parse_status": status.value if hasattr(status, "value") else str(status),
-            "error_message": error,
-        })
-
-
-class SignalRepository:
-    def __init__(self, db: Any) -> None:
-        self.db = db
-        self._col = db.collection("signals")
-
-    async def create(self, signal: dict[str, Any]) -> _Row:
-        ref = self._col.document()
-        data = {
-            "id": ref.id,
-            "created_at": _now().isoformat(),
-            **signal,
-        }
-        if isinstance(data.get("timestamp"), datetime):
-            data["timestamp"] = data["timestamp"].isoformat()
-        await ref.set(data)
-        return _signal_row(data, ref.id)
-
-    async def get_by_asset(self, asset_id: Any, limit: int = 20) -> list[_Row]:
-        docs = await (
-            self._col
-            .where("asset_id", "==", int(asset_id) if str(asset_id).isdigit() else str(asset_id))
-            .order_by("created_at", direction="DESCENDING")
-            .limit(limit)
-            .get()
+        result = await self.db.execute(
+            select(RawPayloadTable.id).where(RawPayloadTable.payload_hash == hash_val)
         )
-        return [_signal_row(d.to_dict() or {}, d.id) for d in docs]
+        return result.scalar_one_or_none() is not None
 
-    async def get_latest_by_asset(self, asset_id: Any) -> _Row | None:
+    async def get_by_id(self, payload_id: Any) -> RawPayloadTable | None:
+        return await self.db.get(RawPayloadTable, int(payload_id))
+
+    async def update_parse_status(self, payload_id: Any, status: Any, error: str | None = None) -> None:
+        row = await self.get_by_id(payload_id)
+        if row is None:
+            return
+        row.parse_status = status.value if hasattr(status, "value") else str(status)
+        row.error_message = error
+        await self.db.commit()
+
+
+class SignalRepository(_BaseRepository):
+    async def create(self, signal: dict[str, Any]) -> SignalTable:
+        asset = await self._resolve_asset(signal.get("asset_id"))
+        row = SignalTable(
+            asset_id=asset.id if asset else int(signal["asset_id"]),
+            symbol=str(signal.get("symbol") or (asset.symbol if asset else "")) or None,
+            timestamp=_to_datetime(signal.get("timestamp")) or _now(),
+            horizon=str(signal.get("horizon", "swing")),
+            signal_type=str(signal.get("signal_type", "composite")),
+            direction=str(signal.get("direction", "neutral")),
+            score=float(signal.get("score", 0.0)),
+            confidence=float(signal.get("confidence", 0.5)),
+            expected_return_bucket=signal.get("expected_return_bucket"),
+            risk_bucket=signal.get("risk_bucket"),
+            main_drivers_json=signal.get("main_drivers_json"),
+            evidence_ids=_json_list(signal.get("evidence_ids")),
+            reasoning=str(signal.get("reasoning", "")),
+            counterarguments=_json_list(signal.get("counterarguments")),
+            risk_flags=_json_list(signal.get("risk_flags")),
+            created_by=str(signal.get("created_by", "system")),
+            version=str(signal.get("version", "1.0")),
+        )
+        self.db.add(row)
+        return await _commit_refresh(self.db, row)
+
+    async def get_by_asset(self, asset_id: Any, limit: int = 20) -> list[SignalTable]:
+        asset = await self._resolve_asset(asset_id)
+        if asset is None:
+            return []
+        result = await self.db.execute(
+            select(SignalTable)
+            .where(SignalTable.asset_id == asset.id)
+            .order_by(desc(SignalTable.created_at))
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def get_latest_by_asset(self, asset_id: Any) -> SignalTable | None:
         rows = await self.get_by_asset(asset_id, limit=1)
         return rows[0] if rows else None
 
-    async def get_recent(self, limit: int = 50) -> list[_Row]:
-        docs = await (
-            self._col
-            .order_by("created_at", direction="DESCENDING")
+    async def get_recent(self, limit: int = 50) -> list[SignalTable]:
+        result = await self.db.execute(
+            select(SignalTable)
+            .order_by(desc(SignalTable.created_at))
             .limit(limit)
-            .get()
         )
-        return [_signal_row(d.to_dict() or {}, d.id) for d in docs]
+        return list(result.scalars().all())
 
-    async def get_by_id(self, signal_id: str) -> _Row | None:
-        doc = await self._col.document(str(signal_id)).get()
-        return _signal_row(doc.to_dict() or {}, doc.id) if doc.exists else None
+    async def get_by_id(self, signal_id: Any) -> SignalTable | None:
+        return await self.db.get(SignalTable, int(signal_id))
 
 
-class DailyBriefingRepository:
-    def __init__(self, db: Any) -> None:
-        self.db = db
-        self._col = db.collection("daily_briefings")
-
-    async def create(self, briefing: dict[str, Any]) -> _Row:
-        date_val = briefing.get("date", "")
-        if hasattr(date_val, "isoformat"):
-            date_str = date_val.isoformat()
+class DailyBriefingRepository(_BaseRepository):
+    async def create(self, briefing: dict[str, Any]) -> DailyBriefingTable:
+        raw_date = briefing.get("date")
+        if isinstance(raw_date, date):
+            date_str = raw_date.isoformat()
         else:
-            date_str = str(date_val)
+            date_str = str(raw_date)
 
         existing = await self.get_by_date(date_str)
-        if existing:
+        if existing is not None:
             return existing
 
-        data = {
-            "id": date_str,
-            "created_at": _now().isoformat(),
-            **{k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in briefing.items()},
-        }
-        await self._col.document(date_str).set(data)
-        return _briefing_row(data, date_str)
-
-    async def get_latest(self) -> _Row | None:
-        docs = await (
-            self._col
-            .order_by("date", direction="DESCENDING")
-            .limit(1)
-            .get()
+        row = DailyBriefingTable(
+            date=date_str,
+            market_regime_summary=str(briefing.get("market_regime_summary", "")),
+            macro_summary=str(briefing.get("macro_summary", "")),
+            equity_summary=str(briefing.get("equity_summary", "")),
+            etf_summary=str(briefing.get("etf_summary", "")),
+            bond_summary=str(briefing.get("bond_summary", "")),
+            crypto_summary=str(briefing.get("crypto_summary", "")),
+            top_opportunities=briefing.get("top_opportunities"),
+            top_risks=briefing.get("top_risks"),
+            unusual_social_activity=briefing.get("unusual_social_activity"),
+            major_news_events=briefing.get("major_news_events"),
+            watchlist_changes=briefing.get("watchlist_changes"),
+            evidence_ids=briefing.get("evidence_ids"),
+            disclaimer=str(briefing.get("disclaimer", "")),
         )
-        if not docs:
-            return None
-        d = docs[0]
-        return _briefing_row(d.to_dict() or {}, d.id)
+        self.db.add(row)
+        return await _commit_refresh(self.db, row)
 
-    async def get_by_date(self, date_str: str) -> _Row | None:
-        doc = await self._col.document(date_str).get()
-        return _briefing_row(doc.to_dict() or {}, doc.id) if doc.exists else None
+    async def get_latest(self) -> DailyBriefingTable | None:
+        result = await self.db.execute(
+            select(DailyBriefingTable)
+            .order_by(desc(DailyBriefingTable.date))
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_date(self, date_str: str) -> DailyBriefingTable | None:
+        result = await self.db.execute(
+            select(DailyBriefingTable).where(DailyBriefingTable.date == date_str)
+        )
+        return result.scalar_one_or_none()
+
+
+class PortfolioProfileRepository(_BaseRepository):
+    async def get_default(self) -> PortfolioProfileTable | None:
+        result = await self.db.execute(
+            select(PortfolioProfileTable).order_by(PortfolioProfileTable.id).limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_id(self, profile_id: int) -> PortfolioProfileTable | None:
+        return await self.db.get(PortfolioProfileTable, profile_id)
+
+    async def upsert(self, profile: PortfolioProfile) -> PortfolioProfileTable:
+        existing = None
+        if profile.id is not None:
+            existing = await self.get_by_id(profile.id)
+        if existing is None:
+            result = await self.db.execute(
+                select(PortfolioProfileTable).where(PortfolioProfileTable.name == profile.name)
+            )
+            existing = result.scalar_one_or_none()
+
+        values = {
+            "name": profile.name,
+            "risk_bucket": profile.risk_bucket,
+            "time_horizon_years": profile.time_horizon_years,
+            "max_drawdown_tolerance": profile.max_drawdown_tolerance,
+            "use_crypto": profile.use_crypto,
+            "use_precious_metals": profile.use_precious_metals,
+            "min_liquidity_months": profile.min_liquidity_months,
+            "avoid_leverage": profile.avoid_leverage,
+            "single_stock_soft_cap": profile.single_stock_soft_cap,
+            "single_stock_hard_cap": profile.single_stock_hard_cap,
+            "notes": profile.notes,
+        }
+        if existing is not None:
+            for key, value in values.items():
+                setattr(existing, key, value)
+            return await _commit_refresh(self.db, existing)
+
+        row = PortfolioProfileTable(**values)
+        self.db.add(row)
+        return await _commit_refresh(self.db, row)
+
+    async def set_positions(self, profile_id: int, positions: list[PortfolioPosition]) -> None:
+        await self.db.execute(
+            delete(PortfolioPositionTable).where(PortfolioPositionTable.profile_id == profile_id)
+        )
+        for position in positions:
+            self.db.add(
+                PortfolioPositionTable(
+                    profile_id=profile_id,
+                    symbol=position.symbol,
+                    quantity=position.quantity,
+                    market_value=position.market_value,
+                    cost_basis=position.cost_basis,
+                    portfolio_weight=position.portfolio_weight,
+                    asset_class=position.asset_class,
+                    theme_tags=position.theme_tags,
+                    is_speculative=position.is_speculative,
+                )
+            )
+        await self.db.commit()
+
+    async def get_positions(self, profile_id: int) -> list[PortfolioPositionTable]:
+        result = await self.db.execute(
+            select(PortfolioPositionTable)
+            .where(PortfolioPositionTable.profile_id == profile_id)
+            .order_by(PortfolioPositionTable.symbol)
+        )
+        return list(result.scalars().all())
+
+
+class PortfolioPolicyRepository(_BaseRepository):
+    async def replace_rules(self, profile_id: int, rules: list[PolicyRule]) -> None:
+        await self.db.execute(
+            delete(PortfolioPolicyRuleTable).where(PortfolioPolicyRuleTable.profile_id == profile_id)
+        )
+        for rule in rules:
+            self.db.add(
+                PortfolioPolicyRuleTable(
+                    profile_id=profile_id,
+                    rule_name=rule.rule_name,
+                    rule_type=rule.rule_type,
+                    target_weight=rule.target_weight,
+                    soft_cap=rule.soft_cap,
+                    hard_cap=rule.hard_cap,
+                    minimum_weight=rule.minimum_weight,
+                    asset_class=rule.asset_class,
+                    theme_tag=rule.theme_tag,
+                    symbol=rule.symbol,
+                    is_active=rule.is_active,
+                )
+            )
+        await self.db.commit()
+
+    async def get_rules(self, profile_id: int) -> list[PortfolioPolicyRuleTable]:
+        result = await self.db.execute(
+            select(PortfolioPolicyRuleTable)
+            .where(PortfolioPolicyRuleTable.profile_id == profile_id)
+            .order_by(PortfolioPolicyRuleTable.id)
+        )
+        return list(result.scalars().all())

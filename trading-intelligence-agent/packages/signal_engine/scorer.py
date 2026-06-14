@@ -96,17 +96,18 @@ class SignalScorer:
     ) -> float:
         """Score how well current macro environment aligns with the asset class."""
         mc = macro_context.lower()
+        asset_kind = asset_class.lower()
         inverted = "inverted" in mc
-        if asset_class in ("bond", "bond_etf"):
+        if asset_kind in ("bond", "bond_etf", "cash_equivalent"):
             if inverted:
                 return 0.3
             return -0.1
-        if asset_class in ("stock", "etf", "index"):
+        if asset_kind in ("stock", "equity", "etf", "index"):
             if inverted:
                 return -0.3
             vix_high = "vix: 2" in mc or "vix: 3" in mc  # rough check
             return -0.2 if vix_high else 0.1
-        if asset_class == "crypto":
+        if asset_kind == "crypto":
             if "inflation" in mc and float(
                 mc.split("cpi:")[1].split("%")[0].strip() if "cpi:" in mc else "3"
             ) > 4:

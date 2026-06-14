@@ -9,10 +9,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml .
-RUN pip install --no-cache-dir -e .
-
 COPY . .
+RUN pip install --no-cache-dir -e .
 
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --retries=3 \

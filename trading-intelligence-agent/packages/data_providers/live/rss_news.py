@@ -16,11 +16,11 @@ from packages.data_providers.base import BaseNewsProvider, ProviderConfig, Provi
 logger = structlog.get_logger()
 
 _DEFAULT_FEEDS: list[tuple[str, str]] = [
-    ("Reuters Business", "https://feeds.reuters.com/reuters/businessNews"),
     ("Bloomberg Markets", "https://feeds.bloomberg.com/markets/news.rss"),
     ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex"),
     ("MarketWatch Top Stories", "https://feeds.marketwatch.com/marketwatch/topstories/"),
     ("CNBC Finance", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"),
+    ("Investing.com Stock Market News", "https://www.investing.com/rss/news_25.rss"),
 ]
 
 

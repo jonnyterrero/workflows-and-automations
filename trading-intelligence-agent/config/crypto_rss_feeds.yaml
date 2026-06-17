@@ -16,10 +16,10 @@ rss_feeds:
       url: https://feeds.bloomberg.com/crypto/news.rss
       reliability: 10
       monitor: daily
-    - name: Reuters Digital Assets
-      url: https://www.reuters.com/arc/outboundfeeds/newsroom/category/cryptocurrency/
-      reliability: 9
-      monitor: intraday
+    - name: CryptoPotato
+      url: https://cryptopotato.com/feed/
+      reliability: 6
+      monitor: daily
     - name: Cointelegraph
       url: https://cointelegraph.com/rss
       reliability: 7
@@ -29,7 +29,7 @@ rss_feeds:
       reliability: 7
       monitor: daily
     - name: Bitcoin Magazine
-      url: https://bitcoinmagazine.com/.rss/full/
+      url: https://bitcoinmagazine.com/feed
       reliability: 7
       monitor: weekly
     - name: CryptoSlate
@@ -43,21 +43,21 @@ rss_feeds:
 
   security_exploits:
     - name: Immunefi Blog
-      url: https://immunefi.com/blog/rss.xml
+      url: https://immunefi.com/blog/rss/
       reliability: 9
       monitor: event_driven
-    - name: Rekt News
-      url: https://rekt.news/feed/
+    - name: Halborn Blog
+      url: https://www.halborn.com/blog/feed.xml
       reliability: 8
-      monitor: weekly
+      monitor: daily
 
   regulatory_policy:
     - name: SEC Press Releases
-      url: https://www.sec.gov/rss/news/pressreleases.xml
+      url: https://www.sec.gov/news/pressreleases.rss
       reliability: 10
       monitor: event_driven
     - name: CFTC Press Releases
-      url: https://www.cftc.gov/feed
+      url: https://www.cftc.gov/RSS/RSSGP/rssgp.xml
       reliability: 10
       monitor: event_driven
 

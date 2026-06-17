@@ -60,3 +60,11 @@ def test_provider_status(monkeypatch: pytest.MonkeyPatch) -> None:
     assert status["crypto"] == "alpha_vantage_crypto"
     assert "rss_news" in status["news"]
     assert "crypto_rss_news" in status["news"]
+
+
+def test_default_rss_feeds_drop_dead_reuters_urls(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("RSS_FEED_URLS", raising=False)
+    provider = RssNewsProvider()
+    urls = [url for _, url in provider._feeds]
+    assert all("reuters.com" not in url for url in urls)
+    assert any("investing.com/rss/news_25.rss" in url for url in urls)

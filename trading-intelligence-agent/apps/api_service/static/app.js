@@ -39,6 +39,7 @@ const elements = {
   risksList: document.getElementById("risksList"),
   newsEventsList: document.getElementById("newsEventsList"),
   activityLog: document.getElementById("activityLog"),
+  bootstrapBtn: document.getElementById("bootstrapBtn"),
   runDailyBtn: document.getElementById("runDailyBtn"),
   runResearchBtn: document.getElementById("runResearchBtn"),
   verifyXBtn: document.getElementById("verifyXBtn"),
@@ -420,6 +421,7 @@ function bindEvents() {
   });
   elements.refreshAllBtn.addEventListener("click", refreshAll);
   elements.signalForm.addEventListener("submit", runSignal);
+  elements.bootstrapBtn.addEventListener("click", () => runAdminAction("/admin/jobs/bootstrap-live", "Bootstrap"));
   elements.runDailyBtn.addEventListener("click", () => runAdminAction("/admin/jobs/run-daily", "Daily ingestion"));
   elements.runResearchBtn.addEventListener("click", () => runAdminAction("/admin/jobs/run-research", "Research briefing"));
   elements.verifyXBtn.addEventListener("click", () => runAdminAction("/admin/setup/x/verify", "X verification"));

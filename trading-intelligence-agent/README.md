@@ -79,6 +79,7 @@ make docker-up
 - `GET /admin/providers`
 - `GET /admin/corporate/{symbol}`
 - `GET /admin/ipo-calendar`
+- `POST /admin/jobs/bootstrap-live`
 - `POST /admin/jobs/run-daily`
 - `POST /admin/jobs/run-research`
 - `GET /signals`

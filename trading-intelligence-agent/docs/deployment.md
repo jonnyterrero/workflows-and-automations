@@ -74,13 +74,14 @@ python -m scripts.run_daily_research
 After deployment, use this sequence:
 
 1. Open `/` and paste `ADMIN_API_TOKEN` into the dashboard.
-2. `GET /health`
-3. `GET /admin/providers`
-4. `POST /admin/jobs/run-daily`
-5. `POST /admin/jobs/run-research`
-6. `GET /admin/corporate/NVDA`
-7. `GET /admin/ipo-calendar`
-8. `GET /research/daily-briefing/latest`
+2. If the watchlist is empty, `POST /admin/jobs/bootstrap-live`
+3. `GET /health`
+4. `GET /admin/providers`
+5. `POST /admin/jobs/run-daily`
+6. `POST /admin/jobs/run-research`
+7. `GET /admin/corporate/NVDA`
+8. `GET /admin/ipo-calendar`
+9. `GET /research/daily-briefing/latest`
 
 Example signal request:
 

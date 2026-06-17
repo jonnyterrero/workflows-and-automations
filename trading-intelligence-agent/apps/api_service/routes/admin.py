@@ -14,6 +14,7 @@ from packages.data_providers.factory import (
 from packages.data_providers.live.crypto_feeds_catalog import catalog_summary
 from packages.data_providers.live.iposcoop_calendar import IPOScoopCalendarProvider
 from packages.data_providers.live.x_setup import get_x_config, verify_x_bearer
+from packages.bootstrap.live_setup import bootstrap_live_environment
 from packages.jobs.daily_ingestion import run_daily_ingestion_job
 from packages.jobs.daily_research import run_daily_research_job
 from packages.security.admin import require_admin_api_token
@@ -114,6 +115,16 @@ async def get_ipo_calendar() -> dict:
 async def run_daily_job() -> dict:
     """Run a full daily data collection cycle."""
     return await run_daily_ingestion_job(AsyncSessionLocal)
+
+
+@router.post("/jobs/bootstrap-live")
+async def bootstrap_live_job() -> dict:
+    """Seed the live asset universe, watchlist, and default portfolio policy."""
+    return await bootstrap_live_environment(
+        AsyncSessionLocal,
+        include_full_universe=True,
+        reset_watchlist=False,
+    )
 
 
 @router.post("/jobs/run-ingestion")

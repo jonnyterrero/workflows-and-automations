@@ -54,6 +54,18 @@ _SPOT_CRYPTO_ASSETS: dict[str, dict[str, Any]] = {
         "is_speculative": True,
     },
 }
+SUPPORTED_DEFAULT_WATCHLIST = [
+    "VOO",
+    "VXUS",
+    "QQQM",
+    "SMH",
+    "NLR",
+    "GLD",
+    "IBIT",
+    "SGOV",
+    "BTC-USD",
+    "ETH-USD",
+]
 
 
 @dataclass(frozen=True)
@@ -74,7 +86,7 @@ def _default_watchlist() -> list[str]:
         symbol.strip().upper()
         for symbol in os.getenv(
             "DEFAULT_WATCHLIST",
-            "SPY,QQQ,TLT,AAPL,NVDA,TSLA,BTC-USD,ETH-USD",
+            ",".join(SUPPORTED_DEFAULT_WATCHLIST),
         ).split(",")
         if symbol.strip()
     ]
@@ -146,7 +158,20 @@ async def bootstrap_live_environment(
 ) -> dict[str, Any]:
     await create_tables()
 
-    target_watchlist = [symbol.strip().upper() for symbol in (watchlist_symbols or _default_watchlist()) if symbol.strip()]
+    requested_watchlist = [symbol.strip().upper() for symbol in (watchlist_symbols or _default_watchlist()) if symbol.strip()]
+    target_watchlist: list[str] = []
+    watchlist_skipped: list[str] = []
+    for symbol in requested_watchlist:
+        try:
+            resolve_bootstrap_asset(symbol)
+        except ValueError:
+            watchlist_skipped.append(symbol)
+            continue
+        target_watchlist.append(symbol)
+
+    if not target_watchlist and watchlist_symbols is None:
+        target_watchlist = list(SUPPORTED_DEFAULT_WATCHLIST)
+
     assets = resolve_bootstrap_assets(target_watchlist, include_full_universe=include_full_universe)
 
     async with db_session_factory() as db:
@@ -207,6 +232,7 @@ async def bootstrap_live_environment(
         "assets_upserted_count": len(upserted_assets),
         "watchlist_added": watchlist_added,
         "watchlist_existing": watchlist_existing,
+        "watchlist_skipped": watchlist_skipped,
         "watchlist_target": target_watchlist,
         "profile_name": DEFAULT_PROFILE.name,
     }

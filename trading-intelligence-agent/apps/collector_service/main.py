@@ -15,7 +15,7 @@ configure_logging("collector")
 logger = structlog.get_logger()
 
 REFRESH_INTERVAL = int(os.getenv("INTRADAY_REFRESH_INTERVAL", "300"))
-CRYPTO_SYMBOLS = os.getenv("DEFAULT_WATCHLIST", "SPY,QQQ,TLT,AAPL,NVDA,TSLA,BTC-USD,ETH-USD").split(",")
+CRYPTO_SYMBOLS = os.getenv("DEFAULT_WATCHLIST", "VOO,VXUS,QQQM,SMH,NLR,GLD,IBIT,SGOV,BTC-USD,ETH-USD").split(",")
 CRYPTO_SYMBOLS = [s for s in CRYPTO_SYMBOLS if "-USD" in s]
 
 

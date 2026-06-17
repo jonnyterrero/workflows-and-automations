@@ -60,7 +60,7 @@ envVarGroups:
       - key: ENABLE_IPOSCOOP_SCRAPER
         value: "true"
       - key: DEFAULT_WATCHLIST
-        value: "SPY,QQQ,TLT,AAPL,NVDA,TSLA,BTC-USD,ETH-USD"
+        value: "VOO,VXUS,QQQM,SMH,NLR,GLD,IBIT,SGOV,BTC-USD,ETH-USD"
       - key: DEFAULT_CRYPTO_WATCHLIST
         value: "BTC-USD,ETH-USD,SOL-USD"
       - key: ADMIN_API_TOKEN

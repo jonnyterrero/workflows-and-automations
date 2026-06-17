@@ -8,7 +8,7 @@
 | ETF OHLCV | DemoMarketDataProvider | Same as equities | Yes |
 | Crypto OHLCV | DemoCryptoProvider (synthetic) | Binance, Coinbase | Optional |
 | Macro Indicators | DemoMacroProvider (fixture) | FRED API, US Treasury | FRED: Yes, Treasury: No |
-| News Articles | DemoNewsProvider (fixture) | NewsAPI, RSS feeds | Yes |
+| News Articles | DemoNewsProvider (fixture) | NewsAPI, RSS feeds, IPO Scoop public calendar | Yes |
 | Social Posts | DemoSocialProvider (fixture) | Reddit API, X/Twitter | Yes |
 | SEC Filings | EDGARFilingsProvider (demo/live) | SEC EDGAR (free) | No (User-Agent header required) |
 | Order Books | DemoCryptoProvider | Binance WebSocket | Optional |
@@ -32,13 +32,16 @@
 - **SEC EDGAR**: Public data, free to use. Include User-Agent with contact email per EDGAR policy.
 - **Reddit**: OK for research via official API. Do not scrape auth-gated content.
 - **News sources**: RSS feeds are generally public. NewsAPI requires API key and has ToS for commercial use.
+- **IPO Scoop**: Public calendar page currently allows basic access in `robots.txt`; use conservatively and avoid aggressive crawl patterns.
+- **MarketWatch**: Do not HTML-scrape the site. Use the public RSS feeds only.
+- **TheStreet**: Direct scraping is currently blocked by anti-bot controls; use licensed/API aggregators instead of bypass attempts.
 - **Crypto exchanges**: Binance/Coinbase provide free public market data endpoints.
 - **Do not scrape**: Do not bypass robots.txt, login pages, or anti-bot systems.
 - **Do not redistribute**: Do not republish raw data in violation of provider ToS.
 
 ## Demo Mode
 
-When `DEMO_MODE=true` (default), all providers return synthetic or fixture data:
+When `DEMO_MODE=true`, all providers return synthetic or fixture data:
 - Market prices: seeded random walk based on symbol hash
 - News: ~7 realistic fixture articles covering SPY, NVDA, AAPL, TSLA, ETH, BTC
 - Social: ~10 fixture Reddit posts across investing/WSB/stocks/crypto

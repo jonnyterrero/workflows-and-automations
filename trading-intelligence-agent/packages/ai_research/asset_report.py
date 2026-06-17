@@ -12,7 +12,11 @@ from packages.news_intel.collector import NewsCollector
 from packages.social_intel.sentiment import SentimentScorer
 from packages.storage.repositories import (
     AssetRepository, MacroRepository, MarketPriceRepository,
-    NewsRepository, SocialPostRepository, SignalRepository,
+    FilingRepository,
+    ModelFeatureRepository,
+    NewsRepository,
+    SocialPostRepository,
+    SignalRepository,
 )
 
 logger = structlog.get_logger()
@@ -61,6 +65,8 @@ class AssetResearchReportGenerator:
             social_repo = SocialPostRepository(db)
             signal_repo = SignalRepository(db)
             macro_repo = MacroRepository(db)
+            feature_repo = ModelFeatureRepository(db)
+            filing_repo = FilingRepository(db)
 
             asset = await asset_repo.get_by_symbol(symbol)
             if not asset:
@@ -82,6 +88,8 @@ class AssetResearchReportGenerator:
             social = await social_repo.get_by_symbol(symbol, limit=15, hours_back=48)
             signals = await signal_repo.get_by_asset(asset.id, limit=5)
             macro_all = await macro_repo.get_all_latest()
+            latest_features = await feature_repo.get_latest(symbol)
+            recent_filings = await filing_repo.get_recent_by_symbol(symbol, limit=5, days_back=120)
 
             evidence_ids: list[int] = []
             evidence_ids.extend([a.id for a in news if a.id])
@@ -99,6 +107,21 @@ class AssetResearchReportGenerator:
                 for s in signals
             ])
             macro_ctx = " | ".join([f"{m.name}={m.value}{m.unit}" for m in macro_all[:6]])
+            feature_payload = latest_features.features_json if latest_features else {}
+            fundamental_notes = feature_payload.get("fundamental_notes") or []
+            catalyst_notes = feature_payload.get("catalyst_notes") or []
+            next_earnings = feature_payload.get("next_earnings_date")
+            filing_ctx = "\n".join([
+                f"{row.filing_type} filed {row.filed_at.date().isoformat()}: {row.url}"
+                for row in recent_filings[:4]
+            ])
+            fundamental_ctx = " | ".join(filter(None, [
+                f"fundamental_score={feature_payload.get('fundamental_score')}" if feature_payload else "",
+                f"event_catalyst_score={feature_payload.get('event_catalyst_score')}" if feature_payload else "",
+                f"next_earnings={next_earnings}" if next_earnings else "",
+                "; ".join(fundamental_notes[:2]) if fundamental_notes else "",
+                "; ".join(catalyst_notes[:2]) if catalyst_notes else "",
+            ]))
             tech_ctx = (
                 f"Close={tech.get('latest_close')}, RSI={tech.get('rsi_14')}, "
                 f"Trend={tech.get('trend_direction')}, Vol20d={tech.get('vol_20d')}, "
@@ -121,6 +144,12 @@ NEWS (last 72h):
 SOCIAL SENTIMENT (last 48h):
 {social_ctx or "No social data"}
 
+FUNDAMENTALS & CATALYSTS:
+{fundamental_ctx or "No fundamentals/catalyst data"}
+
+RECENT FILINGS:
+{filing_ctx or "No recent filings"}
+
 RECENT SIGNALS:
 {signal_ctx or "No signals generated"}
 
@@ -141,7 +170,10 @@ Only reference evidence IDs listed above."""
                 "bullish_case": report_data.get("bullish_case", "Bullish analysis requires more data."),
                 "bearish_case": report_data.get("bearish_case", "Bearish analysis requires more data."),
                 "technical_context": report_data.get("technical_context", tech_ctx),
-                "fundamental_context": report_data.get("fundamental_context", "Fundamental data not available in MVP."),
+                "fundamental_context": report_data.get(
+                    "fundamental_context",
+                    fundamental_ctx or "No fundamentals snapshot available.",
+                ),
                 "macro_context": report_data.get("macro_context", macro_ctx),
                 "sentiment_context": report_data.get("sentiment_context", f"{len(news)} news articles, {len(social)} social posts analyzed."),
                 "risk_flags": report_data.get("risk_flags", []),

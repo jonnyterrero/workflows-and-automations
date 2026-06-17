@@ -66,7 +66,7 @@ Adding a new provider means:
 2. Implement required abstract methods
 3. Register with `ProviderRegistry`
 
-Demo mode is automatic when `DEMO_MODE=true` — fixture providers return synthetic data.
+Demo mode is enabled only when `DEMO_MODE=true` — otherwise the app uses any configured live providers.
 
 ## AI/RAG Flow
 

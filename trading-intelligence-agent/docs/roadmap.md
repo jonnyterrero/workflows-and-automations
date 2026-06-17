@@ -18,19 +18,20 @@
 - ✅ Docker compose setup
 
 ## Phase 2 — Stronger Data Providers
-- [ ] Polygon.io market data adapter
+- [x] Polygon.io market data adapter
 - [x] Alpha Vantage adapter (equities + crypto OHLCV)
 - [x] FRED API macro adapter (real FRED data)
 - [x] NewsAPI.org adapter (free dev tier, budget-limited)
+- [x] Finnhub news + fundamentals + earnings/IPO calendar adapters
 - [x] Reddit API adapter (public JSON search)
 - [x] RSS news (Reuters, Bloomberg Markets, Yahoo)
 - [x] Crypto RSS catalog (`config/crypto_rss_feeds.yaml` — 15 feeds, reliability-weighted)
 - [x] SEC EDGAR live submissions API (CIK lookup)
 - [ ] X/Twitter API v2 social ingestion — **blocked: bearer token returns 401; regenerate at developer.x.com, verify via `POST /admin/setup/x/verify`**
-- [ ] Binance/Coinbase market data adapters
+- [x] Coinbase Exchange public market-data adapter
 - [ ] DeFiLlama public API (TVL/yields — free, next up)
 - [ ] CoinGlass / Glassnode / Nansen (API keys required)
-- [ ] Fundamental data (P/E, EPS via FMP or Polygon)
+- [x] Fundamental data (Finnhub basic financials + earnings calendar)
 
 ## Phase 3 — Dashboard UI
 - [ ] Next.js dashboard

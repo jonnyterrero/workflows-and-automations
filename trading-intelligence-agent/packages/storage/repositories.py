@@ -15,8 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from packages.core_models.db_tables import (
     AssetTable,
     DailyBriefingTable,
+    FilingDocumentTable,
     MacroIndicatorTable,
     MarketPriceTable,
+    ModelFeatureTable,
     NewsArticleTable,
     PortfolioPolicyRuleTable,
     PortfolioPositionTable,
@@ -438,6 +440,90 @@ class MacroRepository(_BaseRepository):
             if latest is not None:
                 rows.append(latest)
         return rows
+
+
+class FilingRepository(_BaseRepository):
+    async def bulk_upsert(self, filings: list[dict[str, Any]]) -> int:
+        rows: list[dict[str, Any]] = []
+        for filing in filings:
+            accession = str(filing.get("accession_number", "")).strip()
+            filed_at = _to_datetime(filing.get("filed_at"))
+            if not accession or filed_at is None:
+                continue
+            rows.append({
+                "company_symbol": str(filing.get("company_symbol", "")).upper(),
+                "filing_type": str(filing.get("filing_type", "")),
+                "filed_at": filed_at,
+                "url": str(filing.get("url", "")),
+                "accession_number": accession,
+                "text": filing.get("text"),
+                "summary": filing.get("summary"),
+                "risk_items": _json_list(filing.get("risk_items")),
+            })
+
+        if not rows:
+            return 0
+
+        await self.db.execute(
+            self._insert_ignore_stmt(
+                FilingDocumentTable,
+                rows,
+                ["accession_number"],
+            )
+        )
+        await self.db.commit()
+        return len(rows)
+
+    async def get_recent_by_symbol(
+        self,
+        symbol: str,
+        limit: int = 10,
+        days_back: int = 90,
+    ) -> list[FilingDocumentTable]:
+        cutoff = _now() - timedelta(days=days_back)
+        result = await self.db.execute(
+            select(FilingDocumentTable)
+            .where(FilingDocumentTable.company_symbol == symbol.upper())
+            .where(FilingDocumentTable.filed_at >= cutoff)
+            .order_by(desc(FilingDocumentTable.filed_at))
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+
+class ModelFeatureRepository(_BaseRepository):
+    async def create_snapshot(
+        self,
+        symbol: str,
+        features_json: dict[str, Any],
+        asset_id: int | None = None,
+        interval: str = "1d",
+        timestamp: datetime | None = None,
+    ) -> ModelFeatureTable:
+        resolved_asset_id = asset_id
+        if resolved_asset_id is None:
+            asset = await self._resolve_asset(symbol)
+            resolved_asset_id = asset.id if asset else None
+
+        row = ModelFeatureTable(
+            symbol=symbol.upper(),
+            asset_id=resolved_asset_id,
+            timestamp=timestamp or _now(),
+            interval=interval,
+            features_json=features_json,
+        )
+        self.db.add(row)
+        return await _commit_refresh(self.db, row)
+
+    async def get_latest(self, symbol: str, interval: str = "1d") -> ModelFeatureTable | None:
+        result = await self.db.execute(
+            select(ModelFeatureTable)
+            .where(ModelFeatureTable.symbol == symbol.upper())
+            .where(ModelFeatureTable.interval == interval)
+            .order_by(desc(ModelFeatureTable.timestamp))
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
 
 
 class RawPayloadRepository(_BaseRepository):

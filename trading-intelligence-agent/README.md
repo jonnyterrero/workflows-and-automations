@@ -23,9 +23,11 @@ Production-minded cross-asset decision-support backend for ETFs, equities, bonds
 - Asset universe and watchlist seeding from the PDF-defined symbol list
 - Synthetic OHLCV demo history for seeded assets
 - Macro/news/social demo fixtures
+- Live provider path for Polygon, Alpha Vantage, Coinbase Exchange, Finnhub, NewsAPI, RSS, IPO Scoop, SEC-API, EDGAR, Reddit, and X
 - Portfolio profile, position, and policy-rule persistence
 - Pure `evaluate_portfolio_decision(...)` policy engine with unit coverage
 - API route for `/api/portfolio/evaluate`
+- Corporate intelligence ingestion for fundamentals, earnings/IPO calendar, and recent filings
 
 ## Quick Start
 
@@ -34,7 +36,7 @@ cd trading-intelligence-agent
 cp .env.example .env
 python -m pip install -e ".[dev]"
 python -m scripts.seed_demo_data
-uvicorn apps.api_service.main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn apps.api_service.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 Open `http://localhost:8000/docs`.
@@ -53,6 +55,10 @@ make docker-up
 - `GET /health`
 - `GET /assets`
 - `GET /assets/{symbol}`
+- `GET /admin/providers`
+- `GET /admin/corporate/{symbol}`
+- `GET /admin/ipo-calendar`
+- `POST /admin/jobs/run-daily`
 - `GET /signals`
 - `POST /signals/run`
 - `GET /risk/{symbol}`
@@ -76,7 +82,7 @@ make docker-up
 
 ## Suggested Next Build Steps
 
-1. Replace seeded/demo data with real yfinance, CoinGecko, and FRED adapters.
-2. Add decision-output persistence and human review endpoints.
-3. Build a dashboard client against the FastAPI routes.
-4. Add walk-forward backtest orchestration and result visualizations.
+1. Resolve X API auth and verify social ingestion live.
+2. Add more website-specific scrapers only where no stable API/RSS path exists and robots/ToS permit it.
+3. Add decision-output persistence and human review endpoints.
+4. Build a dashboard client against the FastAPI routes.

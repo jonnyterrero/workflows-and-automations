@@ -6,7 +6,7 @@ PROJECT_DIR := $(shell pwd)
 PYTHON      := python
 PIP         := pip
 export PYTHONPATH := $(PROJECT_DIR)
-export DEMO_MODE  := true
+export DEMO_MODE ?= false
 export DATABASE_URL ?= sqlite+aiosqlite:///./data/trading_intel.db
 
 setup: install-dev seed
@@ -19,7 +19,7 @@ seed:
 	$(PYTHON) -m scripts.seed_demo_data
 
 run-api:
-	uvicorn apps.api_service.main:app --reload --host 0.0.0.0 --port 8000
+	$(PYTHON) -m uvicorn apps.api_service.main:app --reload --host 0.0.0.0 --port 8000
 
 run-worker:
 	$(PYTHON) -m apps.worker_service.main
@@ -32,7 +32,7 @@ run-collector:
 
 run-demo:
 	DEMO_MODE=true DATABASE_URL=$(DATABASE_URL) \
-	uvicorn apps.api_service.main:app --reload --host 0.0.0.0 --port 8000
+	$(PYTHON) -m uvicorn apps.api_service.main:app --reload --host 0.0.0.0 --port 8000
 
 test:
 	DEMO_MODE=true DATABASE_URL=sqlite+aiosqlite:///./data/test_trading_intel.db \

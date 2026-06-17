@@ -8,7 +8,7 @@ x-common: &common
   environment:
     - PYTHONPATH=/app
     - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/trading_intel
-    - DEMO_MODE=true
+    - DEMO_MODE=${DEMO_MODE:-false}
   volumes:
     - .:/app
   restart: unless-stopped
@@ -35,7 +35,7 @@ services:
     build:
       context: .
       dockerfile: infra/docker/Dockerfile.api
-    command: uvicorn apps.api_service.main:app --host 0.0.0.0 --port 8000 --reload
+    command: python -m uvicorn apps.api_service.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     depends_on:

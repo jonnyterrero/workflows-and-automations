@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import structlog
 
 from packages.data_providers.base import BaseNewsProvider
-from packages.social_intel.ticker_extractor import TickerExtractor
 from packages.social_intel.sentiment import NewsCredibilityScorer, SentimentScorer
+from packages.social_intel.ticker_extractor import TickerExtractor
 from packages.storage.repositories import NewsRepository, RawPayloadRepository
 
 logger = structlog.get_logger()
@@ -31,7 +31,7 @@ class NewsCollector:
         pub_raw = article.get("published_at", "")
         try:
             pub_dt = datetime.fromisoformat(str(pub_raw).replace("Z", "+00:00"))
-            hours_ago = (datetime.now(tz=timezone.utc) - pub_dt).total_seconds() / 3600
+            hours_ago = (datetime.now(tz=UTC) - pub_dt).total_seconds() / 3600
         except Exception:
             hours_ago = 0.0
         article["credibility_score"] = _cred.score_article(
@@ -93,8 +93,7 @@ class NewsCollector:
         return summary
 
     async def collect_general_market_news(self, hours_back: int = 24) -> dict[str, Any]:
-        generic_symbols = ["market", "S&P", "Federal Reserve", "economy", "inflation"]
-        return await self.collect_for_watchlist(generic_symbols, hours_back=hours_back)
+        return await self.collect_for_watchlist([""], hours_back=hours_back)
 
     async def collect_crypto_headlines(self, hours_back: int = 48) -> dict[str, Any]:
         """Sweep crypto-specific RSS and NewsAPI headlines (not symbol-filtered)."""

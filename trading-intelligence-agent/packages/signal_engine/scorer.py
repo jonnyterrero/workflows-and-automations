@@ -214,17 +214,22 @@ class SignalScorer:
         horizon: SignalHorizon = SignalHorizon.SWING,
     ) -> dict[str, Any]:
         """Full signal computation pipeline for a single asset."""
-        from packages.storage.repositories import MarketPriceRepository, NewsRepository, SocialPostRepository
+        from packages.storage.repositories import (
+            FilingRepository,
+            MarketPriceRepository,
+            ModelFeatureRepository,
+            NewsRepository,
+            SocialPostRepository,
+        )
         from packages.analytics.technicals import TechnicalAnalyzer
-        from packages.news_intel.collector import NewsCollector
         from packages.social_intel.sentiment import SentimentScorer
         from packages.risk_engine.risk_flags import RiskEngine
-        from packages.macro_data.collector import MacroDataCollector
 
         components = SignalComponents()
         analyzer = TechnicalAnalyzer()
         sentiment = SentimentScorer()
         risk_engine = RiskEngine()
+        evidence_count = 0
 
         # Technical score
         price_repo = MarketPriceRepository(db)
@@ -258,6 +263,7 @@ class SignalScorer:
             components.news_sentiment_score = avg_news
             components.evidence_ids.extend([a.id for a in articles if a.id])
             components.reasoning_parts.append(f"News: {len(articles)} articles, avg sentiment={avg_news:.2f}")
+            evidence_count += len(articles)
 
         # Social sentiment
         social_repo = SocialPostRepository(db)
@@ -274,6 +280,32 @@ class SignalScorer:
                 if spam_excluded > len(posts) * 0.5:
                     components.contradiction_penalty += 0.2
                     components.risk_flags.append("High social spam ratio — social signals unreliable")
+                evidence_count += len(valid_posts)
+
+        # Fundamentals and event catalysts
+        feature_repo = ModelFeatureRepository(db)
+        filing_repo = FilingRepository(db)
+        latest_features = await feature_repo.get_latest(symbol)
+        if latest_features is not None:
+            feature_payload = latest_features.features_json or {}
+            components.fundamental_score = float(feature_payload.get("fundamental_score", 0.0) or 0.0)
+            components.event_catalyst_score = float(feature_payload.get("event_catalyst_score", 0.0) or 0.0)
+            notes = feature_payload.get("fundamental_notes") or []
+            catalyst_notes = feature_payload.get("catalyst_notes") or []
+            next_earnings = feature_payload.get("next_earnings_date")
+            if notes:
+                components.reasoning_parts.append(f"Fundamentals: {notes[0]}")
+            if catalyst_notes:
+                components.reasoning_parts.append(f"Catalysts: {', '.join(catalyst_notes[:2])}")
+            if next_earnings:
+                components.counterarguments.append(f"Upcoming earnings on {next_earnings} may increase volatility.")
+            evidence_count += 1
+
+        recent_filings = await filing_repo.get_recent_by_symbol(symbol, limit=5, days_back=120)
+        if recent_filings:
+            filing_types = [row.filing_type for row in recent_filings]
+            components.reasoning_parts.append(f"Filings: recent {'/'.join(filing_types[:3])}")
+            evidence_count += len(recent_filings)
 
         # Contradiction detection
         if components.news_sentiment_score > 0.3 and components.social_sentiment_score < -0.3:
@@ -289,10 +321,10 @@ class SignalScorer:
         components.risk_penalty = min(len(flags) * 0.15, 0.6)
 
         # Low evidence penalty
-        if len(components.evidence_ids) < int(_T.get("min_evidence_count", 2)):
+        if evidence_count < int(_T.get("min_evidence_count", 2)):
             components.low_confidence_penalty = 0.3
             components.risk_flags.append("Insufficient evidence — treat signal with caution")
 
         return self.build_signal_dict(
-            asset_id, components, len(components.evidence_ids), horizon,
+            asset_id, components, evidence_count, horizon,
         )

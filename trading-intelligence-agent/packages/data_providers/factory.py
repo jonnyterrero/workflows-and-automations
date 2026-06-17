@@ -9,6 +9,7 @@ import structlog
 from packages.data_providers.base import (
     BaseCryptoProvider,
     BaseFilingsProvider,
+    BaseFundamentalsProvider,
     BaseMacroProvider,
     BaseMarketDataProvider,
     BaseNewsProvider,
@@ -24,10 +25,16 @@ from packages.data_providers.live.alpha_vantage import AlphaVantageMarketProvide
 from packages.data_providers.live.alpha_vantage_crypto import AlphaVantageCryptoProvider
 from packages.data_providers.live.crypto_rss_news import CryptoRssNewsProvider
 from packages.data_providers.live.crypto_feeds_catalog import catalog_summary, load_crypto_rss_catalog
+from packages.data_providers.live.coinbase_exchange import CoinbaseExchangeCryptoProvider
+from packages.data_providers.live.finnhub_fundamentals import FinnhubFundamentalsProvider
+from packages.data_providers.live.finnhub_news import FinnhubNewsProvider
 from packages.data_providers.live.fred import FredMacroProvider
+from packages.data_providers.live.iposcoop_calendar import IPOScoopCalendarProvider
 from packages.data_providers.live.newsapi import NewsApiProvider
+from packages.data_providers.live.polygon_market import PolygonMarketProvider
 from packages.data_providers.live.reddit_social import RedditSocialProvider
 from packages.data_providers.live.rss_news import RssNewsProvider
+from packages.data_providers.live.sec_api_filings import SecApiFilingsProvider
 from packages.data_providers.live.x_setup import get_x_config
 from packages.data_providers.live.x_social import XSocialProvider
 from packages.filings.edgar import EDGARFilingsProvider
@@ -44,6 +51,11 @@ def _has_key(name: str) -> bool:
 
 
 def get_market_provider() -> BaseMarketDataProvider:
+    if not is_demo_mode() and _has_key("POLYGON_API_KEY"):
+        try:
+            return PolygonMarketProvider()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("polygon_provider_fallback", error=str(exc))
     if not is_demo_mode() and _has_key("ALPHA_VANTAGE_API_KEY"):
         try:
             return AlphaVantageMarketProvider()
@@ -62,6 +74,11 @@ def get_macro_provider() -> BaseMacroProvider:
 
 
 def get_crypto_provider() -> BaseCryptoProvider:
+    if not is_demo_mode() and os.getenv("COINBASE_USE_PUBLIC_MARKET_DATA", "true").lower() == "true":
+        try:
+            return CoinbaseExchangeCryptoProvider()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("coinbase_crypto_provider_fallback", error=str(exc))
     if not is_demo_mode() and _has_key("ALPHA_VANTAGE_API_KEY"):
         try:
             return AlphaVantageCryptoProvider()
@@ -78,6 +95,16 @@ def get_news_providers() -> list[BaseNewsProvider]:
         RssNewsProvider(),       # equities/macro: Reuters, Bloomberg Markets, Yahoo, etc.
         CryptoRssNewsProvider(),  # crypto: CoinDesk, Bloomberg Crypto, etc.
     ]
+    if os.getenv("ENABLE_IPOSCOOP_SCRAPER", "true").lower() == "true":
+        try:
+            providers.append(IPOScoopCalendarProvider())
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("iposcoop_provider_skip", error=str(exc))
+    if _has_key("FINNHUB_API_KEY"):
+        try:
+            providers.append(FinnhubNewsProvider())
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("finnhub_news_provider_skip", error=str(exc))
     if _has_key("NEWSAPI_KEY"):
         try:
             providers.append(NewsApiProvider())
@@ -93,7 +120,21 @@ def get_social_providers() -> list[BaseSocialProvider]:
 
 
 def get_filings_provider() -> BaseFilingsProvider:
+    if not is_demo_mode() and _has_key("SEC_API_KEY"):
+        try:
+            return SecApiFilingsProvider()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("sec_api_provider_fallback", error=str(exc))
     return EDGARFilingsProvider()
+
+
+def get_fundamentals_provider() -> BaseFundamentalsProvider | None:
+    if not is_demo_mode() and _has_key("FINNHUB_API_KEY"):
+        try:
+            return FinnhubFundamentalsProvider()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("finnhub_fundamentals_provider_skip", error=str(exc))
+    return None
 
 
 def build_registry() -> ProviderRegistry:
@@ -105,6 +146,9 @@ def build_registry() -> ProviderRegistry:
         registry.register(social)
     registry.register(get_macro_provider())
     registry.register(get_crypto_provider())
+    fundamentals = get_fundamentals_provider()
+    if fundamentals is not None:
+        registry.register(fundamentals)
     registry.register(get_filings_provider())
     return registry
 
@@ -113,6 +157,10 @@ def provider_status() -> dict[str, Any]:
     """Return which providers are active and why."""
     demo = is_demo_mode()
     news: list[str] = ["demo_news"] if demo else ["rss_news", "crypto_rss_news"]
+    if not demo and os.getenv("ENABLE_IPOSCOOP_SCRAPER", "true").lower() == "true":
+        news.append("iposcoop_calendar")
+    if not demo and _has_key("FINNHUB_API_KEY"):
+        news.append("finnhub_news")
     if not demo and _has_key("NEWSAPI_KEY"):
         news.append("newsapi")
 
@@ -123,16 +171,24 @@ def provider_status() -> dict[str, Any]:
 
     return {
         "demo_mode": demo,
-        "market": "alpha_vantage" if (not demo and _has_key("ALPHA_VANTAGE_API_KEY")) else "demo_market",
+        "market": (
+            "polygon"
+            if (not demo and _has_key("POLYGON_API_KEY"))
+            else "alpha_vantage" if (not demo and _has_key("ALPHA_VANTAGE_API_KEY"))
+            else "demo_market"
+        ),
         "macro": "fred" if (not demo and _has_key("FRED_API_KEY")) else "demo_macro",
         "crypto": (
-            "alpha_vantage_crypto"
+            "coinbase_exchange"
+            if (not demo and os.getenv("COINBASE_USE_PUBLIC_MARKET_DATA", "true").lower() == "true")
+            else "alpha_vantage_crypto"
             if (not demo and _has_key("ALPHA_VANTAGE_API_KEY"))
             else "demo_crypto"
         ),
         "news": news,
         "social": social,
+        "fundamentals": "finnhub_fundamentals" if (not demo and _has_key("FINNHUB_API_KEY")) else None,
         "x_api": x_cfg,
-        "filings": "edgar",
+        "filings": "sec_api" if (not demo and _has_key("SEC_API_KEY")) else "edgar",
         "crypto_source_catalog": catalog_summary() if not demo else None,
     }

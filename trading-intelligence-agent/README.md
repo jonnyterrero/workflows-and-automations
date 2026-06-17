@@ -42,7 +42,7 @@ python -m scripts.bootstrap_live_data
 python -m uvicorn apps.api_service.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Open `http://localhost:8000/docs`.
+Open `http://localhost:8000/` for the operator dashboard or `http://localhost:8000/docs` for raw API docs.
 
 Run the full ingestion cycle:
 
@@ -73,6 +73,7 @@ make docker-up
 ## Key Routes
 
 - `GET /health`
+- `GET /`
 - `GET /assets`
 - `GET /assets/{symbol}`
 - `GET /admin/providers`
@@ -103,7 +104,7 @@ make docker-up
 
 - No broker execution
 - No autonomous trading
-- No dashboard frontend yet
+- Built-in operator dashboard at `/`
 - Data adapters remain key-driven unless real provider credentials are added
 - Backtesting tables exist, but full walk-forward evaluation is not yet the primary path
 

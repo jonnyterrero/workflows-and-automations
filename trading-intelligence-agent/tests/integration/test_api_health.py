@@ -47,6 +47,23 @@ async def test_metrics_endpoint():
 
 
 @pytest.mark.asyncio
+async def test_dashboard_root_serves_html():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers["content-type"]
+    assert "Trading Intelligence Agent" in response.text
+
+
+@pytest.mark.asyncio
+async def test_dashboard_static_asset_serves_css():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.get("/static/styles.css")
+    assert response.status_code == 200
+    assert "text/css" in response.headers["content-type"]
+
+
+@pytest.mark.asyncio
 async def test_assets_empty_list():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/assets")

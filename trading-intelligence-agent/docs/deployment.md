@@ -24,6 +24,7 @@ docker compose run --rm api python -m scripts.run_daily_job
 ```
 
 7. Open:
+   - `http://localhost:8000/`
    - `http://localhost:8000/docs`
    - `http://localhost:8000/health`
 
@@ -65,19 +66,21 @@ python -m scripts.run_daily_research
 - Set `ADMIN_API_TOKEN` to a value you control. Use it as `X-Admin-Token` or `Authorization: Bearer ...` for `/admin/*` routes.
 - `initialDeployHook` on the API service runs `python -m scripts.bootstrap_live_data` once on first successful deploy.
 - The cron schedule in `render.yaml` is UTC.
-- The public API is usable without a frontend. Start with `/docs`.
+- The public deployment now includes a built-in operator dashboard at `/`.
+- The raw API remains available at `/docs`.
 
 ## First Use
 
 After deployment, use this sequence:
 
-1. `GET /health`
-2. `GET /admin/providers`
-3. `POST /admin/jobs/run-daily`
-4. `POST /admin/jobs/run-research`
-5. `GET /admin/corporate/NVDA`
-6. `GET /admin/ipo-calendar`
-7. `GET /research/daily-briefing/latest`
+1. Open `/` and paste `ADMIN_API_TOKEN` into the dashboard.
+2. `GET /health`
+3. `GET /admin/providers`
+4. `POST /admin/jobs/run-daily`
+5. `POST /admin/jobs/run-research`
+6. `GET /admin/corporate/NVDA`
+7. `GET /admin/ipo-calendar`
+8. `GET /research/daily-briefing/latest`
 
 Example signal request:
 

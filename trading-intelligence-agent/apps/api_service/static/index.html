@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trading Intelligence Agent Console</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="masthead">
+        <div>
+          <h1>Trading Intelligence Agent</h1>
+          <p class="lede">
+            Live operator console for the deployed research backend. Run jobs, inspect providers,
+            generate signals, and review the latest briefing from one screen.
+          </p>
+        </div>
+        <div class="top-links">
+          <a href="/docs" target="_blank" rel="noreferrer">Swagger</a>
+          <a href="/redoc" target="_blank" rel="noreferrer">ReDoc</a>
+          <a href="/openapi.json" target="_blank" rel="noreferrer">OpenAPI</a>
+        </div>
+      </header>
+
+      <section class="utility-strip panel">
+        <div class="token-block">
+          <label for="adminToken">Admin API Token</label>
+          <div class="token-row">
+            <input
+              id="adminToken"
+              type="password"
+              placeholder="Paste your Render ADMIN_API_TOKEN"
+              autocomplete="off"
+            />
+            <button id="saveTokenBtn" class="primary">Save Token</button>
+          </div>
+        </div>
+        <div class="utility-meta">
+          <div>
+            <span class="meta-label">Endpoint</span>
+            <code id="endpointText">-</code>
+          </div>
+          <div>
+            <span class="meta-label">Last refresh</span>
+            <span id="lastRefreshText">never</span>
+          </div>
+          <button id="refreshAllBtn" class="ghost">Refresh Console</button>
+        </div>
+      </section>
+
+      <main class="dashboard-grid">
+        <section class="panel status-panel">
+          <div class="section-heading">
+            <h2>Runtime</h2>
+            <span id="healthBadge" class="status-pill neutral">Checking</span>
+          </div>
+          <div class="stat-grid">
+            <article class="stat-tile">
+              <span class="stat-label">Mode</span>
+              <strong id="modeValue">-</strong>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">Version</span>
+              <strong id="versionValue">-</strong>
+            </article>
+            <article class="stat-tile">
+              <span class="stat-label">Uptime</span>
+              <strong id="uptimeValue">-</strong>
+            </article>
+          </div>
+          <p id="healthSummary" class="summary-copy">Waiting for API health data.</p>
+        </section>
+
+        <section class="panel provider-panel">
+          <div class="section-heading">
+            <h2>Provider Stack</h2>
+            <span id="providerBadge" class="status-pill neutral">Admin call required</span>
+          </div>
+          <div id="providerCards" class="provider-cards"></div>
+        </section>
+
+        <section class="panel operations-panel">
+          <div class="section-heading">
+            <h2>Control Surface</h2>
+            <span id="opsBadge" class="status-pill neutral">Idle</span>
+          </div>
+          <div class="action-grid">
+            <button id="runDailyBtn" class="primary">Run Daily Ingestion</button>
+            <button id="runResearchBtn" class="secondary">Run Research Briefing</button>
+            <button id="verifyXBtn" class="ghost">Verify X Setup</button>
+          </div>
+          <pre id="operationOutput" class="code-window">No operation executed yet.</pre>
+        </section>
+
+        <section class="panel watchlist-panel">
+          <div class="section-heading">
+            <h2>Watchlist</h2>
+            <span id="watchlistBadge" class="status-pill neutral">Loading</span>
+          </div>
+          <ul id="watchlistList" class="asset-list"></ul>
+        </section>
+
+        <section class="panel signal-panel">
+          <div class="section-heading">
+            <h2>Signal Lab</h2>
+            <span id="signalBadge" class="status-pill neutral">Ready</span>
+          </div>
+          <form id="signalForm" class="signal-form">
+            <label>
+              <span class="meta-label">Symbol</span>
+              <input id="signalSymbol" type="text" value="NVDA" maxlength="16" />
+            </label>
+            <label>
+              <span class="meta-label">Horizon</span>
+              <select id="signalHorizon">
+                <option value="intraday">intraday</option>
+                <option value="swing" selected>swing</option>
+                <option value="position">position</option>
+              </select>
+            </label>
+            <button type="submit" class="primary">Generate Signal</button>
+          </form>
+          <div id="signalResult" class="signal-result empty-state">
+            Run a symbol to create a fresh research signal.
+          </div>
+          <div class="subpanel">
+            <div class="section-heading compact">
+              <h3>Recent Signals</h3>
+            </div>
+            <ul id="recentSignalsList" class="signal-list"></ul>
+          </div>
+        </section>
+
+        <section class="panel briefing-panel">
+          <div class="section-heading">
+            <h2>Daily Briefing</h2>
+            <span id="briefingBadge" class="status-pill neutral">Loading</span>
+          </div>
+          <div class="briefing-header">
+            <div>
+              <span class="meta-label">Briefing date</span>
+              <strong id="briefingDate">-</strong>
+            </div>
+            <div>
+              <span class="meta-label">Created</span>
+              <strong id="briefingCreatedAt">-</strong>
+            </div>
+          </div>
+          <div class="briefing-grid">
+            <article class="briefing-card">
+              <h3>Market regime</h3>
+              <p id="marketRegimeText">Waiting for briefing data.</p>
+            </article>
+            <article class="briefing-card">
+              <h3>Macro</h3>
+              <p id="macroSummaryText">-</p>
+            </article>
+            <article class="briefing-card">
+              <h3>Equities & ETFs</h3>
+              <p id="equitySummaryText">-</p>
+              <p id="etfSummaryText" class="muted-block">-</p>
+            </article>
+            <article class="briefing-card">
+              <h3>Bonds & Crypto</h3>
+              <p id="bondSummaryText">-</p>
+              <p id="cryptoSummaryText" class="muted-block">-</p>
+            </article>
+          </div>
+          <div class="list-grid">
+            <article class="list-card">
+              <h3>Top opportunities</h3>
+              <ul id="opportunitiesList" class="bullet-list"></ul>
+            </article>
+            <article class="list-card">
+              <h3>Top risks</h3>
+              <ul id="risksList" class="bullet-list"></ul>
+            </article>
+            <article class="list-card span-2">
+              <h3>Major news events</h3>
+              <ul id="newsEventsList" class="bullet-list"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel activity-panel">
+          <div class="section-heading">
+            <h2>Activity Log</h2>
+          </div>
+          <ul id="activityLog" class="activity-log"></ul>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

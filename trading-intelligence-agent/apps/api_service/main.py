@@ -3,10 +3,13 @@ from __future__ import annotations
 
 import os
 import time
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from apps.api_service.routes import admin, assets, backtest, market, news, portfolio, research, risk, signals
 from packages.data_providers.factory import provider_status
@@ -18,6 +21,7 @@ configure_logging("api-service")
 
 DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 VERSION = "0.1.0"
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI(
     title="Trading Intelligence Agent",
@@ -39,6 +43,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 _startup_time = time.time()
 
@@ -46,6 +51,11 @@ _startup_time = time.time()
 @app.on_event("startup")
 async def startup() -> None:
     await create_tables()
+
+
+@app.get("/", include_in_schema=False)
+async def dashboard() -> FileResponse:
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/health", tags=["System"])

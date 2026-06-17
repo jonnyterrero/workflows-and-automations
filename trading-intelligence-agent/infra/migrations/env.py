@@ -2,10 +2,9 @@ import asyncio
 import os
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
-
-from alembic import context
 
 from packages.core_models.db_tables import Base
 
@@ -18,7 +17,11 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    return os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/trading_intel.db")
+    from packages.storage.database import normalize_database_url
+
+    return normalize_database_url(
+        os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./data/trading_intel.db")
+    )
 
 
 def run_migrations_offline() -> None:

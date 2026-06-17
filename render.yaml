@@ -52,17 +52,17 @@ envVarGroups:
   - name: trading-intel-shared
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12.4
+        value: "3.12.4"
       - key: DEMO_MODE
-        value: false
+        value: "false"
       - key: COINBASE_USE_PUBLIC_MARKET_DATA
-        value: true
+        value: "true"
       - key: ENABLE_IPOSCOOP_SCRAPER
-        value: true
+        value: "true"
       - key: DEFAULT_WATCHLIST
-        value: SPY,QQQ,TLT,AAPL,NVDA,TSLA,BTC-USD,ETH-USD
+        value: "SPY,QQQ,TLT,AAPL,NVDA,TSLA,BTC-USD,ETH-USD"
       - key: DEFAULT_CRYPTO_WATCHLIST
-        value: BTC-USD,ETH-USD,SOL-USD
+        value: "BTC-USD,ETH-USD,SOL-USD"
       - key: ADMIN_API_TOKEN
         sync: false
       - key: EDGAR_USER_AGENT
@@ -86,7 +86,7 @@ envVarGroups:
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: LLM_PROVIDER
-        value: openai
+        value: "openai"
 
 databases:
   - name: trading-intel-db

@@ -70,6 +70,12 @@ This document provides a comprehensive list of software tools, organized by cate
   - CAM
   - Collaboration tools
 
+- **OnShape** - Cloud-native, browser-based parametric CAD
+  - Real-time multi-user collaboration
+  - Full version history (built on Git-like branching)
+  - Part Studios & Assemblies
+  - No local install required
+
 ### Open Source CAD
 - **FreeCAD** - Parametric 3D CAD
   - Part Design
@@ -87,6 +93,18 @@ This document provides a comprehensive list of software tools, organized by cate
   - Sculpting
   - Animation
   - Rendering
+
+## 🔌 Electronics & PCB Design
+
+- **KiCad** - Open-source schematic capture and PCB design
+  - Schematic editor
+  - PCB layout editor
+  - 3D board viewer
+  - Gerber/manufacturing export
+
+- **Altium Designer** - Professional PCB design (commercial)
+- **Eagle** - PCB design (Autodesk)
+- **Arduino IDE** - Microcontroller firmware development
 
 ## 🔬 Simulation & Analysis
 
@@ -305,6 +323,8 @@ This document provides a comprehensive list of software tools, organized by cate
 ### Free/Open Source
 - Python, R, Julia
 - FreeCAD, OpenSCAD, Blender
+- KiCad, Arduino IDE
+- OnShape (free tier)
 - OpenFOAM, CalculiX, Elmer
 - 3D Slicer, ImageJ, ITK-SNAP
 - Git, GitHub, LaTeX
@@ -312,6 +332,7 @@ This document provides a comprehensive list of software tools, organized by cate
 ### Commercial (Licensed)
 - MATLAB, SolidWorks, ANSYS
 - COMSOL, Abaqus, CATIA
+- Altium Designer
 - Tableau, OriginPro
 - LabVIEW, National Instruments
 

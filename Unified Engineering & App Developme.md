@@ -11,10 +11,10 @@
 This monorepo combines:
 
 - 🧪 **Engineering Tech Stack**  
-  MATLAB, Python, simulation, CAD/FEA, data pipelines.
+  MATLAB, Python, SQL, C/C++, simulation, CAD/FEA, data pipelines.
 
 - 🖥 **App Development Framework**  
-  Next.js, React, Flutter, Express/FastAPI, PostgreSQL.
+  Next.js, React, TypeScript, Flutter, SQL, Firebase/Supabase.
 
 - ☁️ **DevOps & Cloud**  
   Docker, GitHub Actions, AWS/GCP deployment patterns.
@@ -66,12 +66,14 @@ This is the core **Engineering Tech Stack** with two modes.
 
 #### 01 — Comprehensive Stack (`engineering/01_comprehensive`)
 
-The “full lab” setup.
+The "full lab" setup.
 
 - **Languages**: MATLAB, Python, R, C/C++, SQL  
-- **Simulation / CAD / FEA**:
+- **CAD / Electronics**:
+  - SolidWorks / OnShape / Fusion 360
+  - KiCad (PCB design)
+- **Simulation / FEA**:
   - COMSOL Multiphysics
-  - SolidWorks / Fusion 360
   - ANSYS (CFD + Structural)
   - Simulink
   - LabVIEW
@@ -85,12 +87,13 @@ Best for **research, multi-disciplinary work, and heavy simulation**.
 
 #### 02 — Optimized Stack (`engineering/02_optimized`)
 
-The “lean and fast” setup built around **MATLAB + Python + SQL**.
+The "lean and fast" setup built around **MATLAB + Python + SQL + C/C++**.
 
 - MATLAB for modeling & numerical analysis
 - Python for data pipelines, automation, ML, APIs
-- SQL / PostgreSQL for storage and analytics
-- Optional FastAPI/Express bridge into the app stack
+- SQL for storage and analytics
+- C/C++ for embedded/firmware and performance-critical code
+- Optional FastAPI bridge into the app stack
 
 Best for **engineering apps, startups, and quick iteration**.
 
@@ -131,9 +134,9 @@ Use this for:
 
 #### Backend — `apps/backend`
 
-- Express.js or FastAPI implementation
-- PostgreSQL + Prisma ORM (or SQL tooling)
-- JWT auth (extendable to OAuth2 / provider logins)
+- Firebase or Supabase (BaaS)
+- SQL (Supabase/PostgreSQL) or Firestore (Firebase)
+- Firebase Auth / Supabase Auth
 - Acts as the **bridge** between engineering outputs and user-facing apps
 
 ---

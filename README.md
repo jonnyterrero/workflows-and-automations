@@ -11,10 +11,10 @@
 This monorepo combines:
 
 - 🧪 **Engineering Tech Stack**  
-  MATLAB, Python, simulation, CAD/FEA, data pipelines.
+  MATLAB, Python, SQL, C/C++, simulation, CAD/FEA, data pipelines.
 
 - 🖥 **App Development Framework**  
-  Next.js, React, Flutter, Express/FastAPI, PostgreSQL.
+  Next.js, React, TypeScript, Flutter, SQL, Firebase/Supabase.
 
 - ☁️ **DevOps & Cloud**  
   Docker, GitHub Actions, AWS/GCP deployment patterns.
@@ -69,9 +69,11 @@ This is the core **Engineering Tech Stack** with two modes.
 The "full lab" setup.
 
 - **Languages**: MATLAB, Python, R, C/C++, SQL  
-- **Simulation / CAD / FEA**:
+- **CAD / Electronics**:
+  - SolidWorks / OnShape / Fusion 360
+  - KiCad (PCB design)
+- **Simulation / FEA**:
   - COMSOL Multiphysics
-  - SolidWorks / Fusion 360
   - ANSYS (CFD + Structural)
   - Simulink
   - LabVIEW
@@ -85,12 +87,13 @@ Best for **research, multi-disciplinary work, and heavy simulation**.
 
 #### 02 — Optimized Stack (`02_Optimized_TechStack`)
 
-The "lean and fast" setup built around **MATLAB + Python + SQL**.
+The "lean and fast" setup built around **MATLAB + Python + SQL + C/C++**.
 
 - MATLAB for modeling & numerical analysis
 - Python for data pipelines, automation, ML, APIs
-- SQL / PostgreSQL for storage and analytics
-- Optional FastAPI/Express bridge into the app stack
+- SQL for storage and analytics
+- C/C++ for embedded/firmware and performance-critical code
+- Optional FastAPI bridge into the app stack
 
 Best for **engineering apps, startups, and quick iteration**.
 
@@ -129,9 +132,9 @@ Use this for:
 
 #### Backend — `03_App-Development-Framework/backend`
 
-- Express.js or FastAPI implementation
-- PostgreSQL + Prisma ORM (or SQL tooling)
-- JWT auth (extendable to OAuth2 / provider logins)
+- Firebase or Supabase (BaaS)
+- SQL (Supabase/PostgreSQL) or Firestore (Firebase)
+- Firebase Auth / Supabase Auth
 - Acts as the **bridge** between engineering outputs and user-facing apps
 
 ---
@@ -190,10 +193,10 @@ GlucoLoop is a **data pipeline + analytics system** for continuous glucose monit
                       │  (insights, risk scores)
                       v
         ┌──────────────────────────────┐
-        │  Backend API (FastAPI/Expr.)│
-        │  - REST endpoints           │
+        │  Backend (Firebase/Supabase)│
+        │  - REST/Function endpoints  │
         │  - Auth / users / devices   │
-        │  - Writes to PostgreSQL     │
+        │  - Writes to SQL/Firestore  │
         └─────────────┬────────────────┘
                       │
           ┌───────────┴────────────┐
@@ -238,7 +241,7 @@ It's the "front door" into your entire ecosystem, both **personal** and **profes
                                    v
                      ┌────────────────────────────┐
                      │    HeartWire Backend       │
-                     │ (FastAPI / Express.js)     │
+                     │ (Firebase / Supabase)      │
                      │ - Auth & sessions          │
                      │ - User config              │
                      │ - System registry          │
@@ -255,8 +258,8 @@ It's the "front door" into your entire ecosystem, both **personal** and **profes
 ```
 
 **Data & Storage:**
-- PostgreSQL for user profiles, app metadata, dashboard config
-- Optional S3/GCS for files/assets
+- SQL (Supabase) or Firestore (Firebase) for user profiles, app metadata, dashboard config
+- Firebase Storage / Supabase Storage for files/assets
 
 HeartWire = the "home base" that:
 - Shows everything you're building
@@ -302,7 +305,7 @@ Goal: create a **unified, queryable health dataset** and build simple, actionabl
                 v
     ┌──────────────────────────┐
     │ Unified Health Data Model│
-    │ (PostgreSQL)             │
+    │ (Supabase/PostgreSQL)    │
     │ - tables: sleep, meals,  │
     │   symptoms, training...  │
     └───────────┬─────────────┘
@@ -503,19 +506,18 @@ flutter pub get
 flutter run
 ```
 
-### 5. Backend (Express/FastAPI)
+### 5. Backend (Firebase/Supabase)
 
 ```bash
 cd 03_App-Development-Framework
 # Navigate to backend directory when created
 
-# if Node/Express:
-npm install
-npm run dev
+# if Supabase:
+supabase start
+supabase db push
 
-# if FastAPI variant:
-# pip install -r requirements.txt
-# uvicorn main:app --reload
+# if Firebase:
+firebase emulators:start
 ```
 
 ---

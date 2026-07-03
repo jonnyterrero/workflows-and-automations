@@ -1,6 +1,6 @@
 # 🚀 App Development Framework
 
-**Modern full-stack application development framework with Next.js, React, TypeScript, Flutter, Express.js, PostgreSQL. Complete guides for web/mobile development, backend architecture, cloud deployment, and CI/CD workflows. Production-ready templates and best practices.**
+**Modern full-stack application development framework with Next.js, React, TypeScript, Flutter, SQL, Firebase/Supabase. Complete guides for web/mobile development, backend architecture, cloud deployment, and CI/CD workflows. Production-ready templates and best practices.**
 
 > **Note**: This framework is part of the [Engineering-Projects](../README.md) repository, which also includes comprehensive and optimized engineering tech stacks. See the main README for an overview of all available tech stack options.
 
@@ -39,10 +39,10 @@ This framework contains comprehensive documentation, guides, and best practices 
 - **State Management**: React Context API, Zustand, Provider/Riverpod
 
 ### Backend
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT, Passport.js
+- **Platform**: Firebase or Supabase (BaaS)
+- **Database**: Firestore/Realtime Database (Firebase) or PostgreSQL (Supabase, plain SQL)
+- **Serverless Functions**: Firebase Cloud Functions / Supabase Edge Functions
+- **Authentication**: Firebase Auth / Supabase Auth (JWT-based under the hood)
 
 ### Cloud & Deployment
 - **Primary**: AWS (ECS, Lambda, S3, CloudFront)
@@ -55,7 +55,7 @@ This framework contains comprehensive documentation, guides, and best practices 
 ### Prerequisites
 - Node.js 18+
 - Flutter SDK (for mobile development)
-- PostgreSQL
+- Firebase CLI or Supabase CLI
 - Git
 
 ### Installation
@@ -102,13 +102,10 @@ app-development/
 │   │   ├── screens/      # UI screens
 │   │   └── widgets/      # Reusable widgets
 │   └── assets/           # Images, fonts, etc.
-├── backend/               # Express.js API server
-│   ├── src/
-│   │   ├── controllers/  # Route controllers
-│   │   ├── models/       # Database models
-│   │   ├── routes/       # API routes
-│   │   └── middleware/   # Custom middleware
-│   └── prisma/           # Database schema
+├── backend/               # Firebase/Supabase project
+│   ├── functions/        # Cloud/Edge functions
+│   ├── migrations/       # Supabase SQL migrations (if using Supabase)
+│   └── security-rules/   # Firestore/Storage security rules (if using Firebase)
 └── docs/                 # Additional documentation
 ```
 
@@ -117,7 +114,7 @@ app-development/
 ### 1. Choose Your Stack
 - **Web Only**: Use Next.js with TypeScript and Tailwind CSS
 - **Mobile Only**: Use Flutter with Dart
-- **Full-Stack**: Combine web frontend, mobile app, and Express.js backend
+- **Full-Stack**: Combine web frontend, mobile app, and Firebase/Supabase backend
 
 ### 2. Follow the Guides
 1. Read [Project Setup Guide](./README-PROJECT.md) for initialization

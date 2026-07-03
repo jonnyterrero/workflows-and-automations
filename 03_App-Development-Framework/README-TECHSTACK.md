@@ -24,21 +24,19 @@ This document outlines the standard technology stack and best practices used acr
 - **Local Storage**: SharedPreferences / Hive
 
 ### Backend
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js
-- **Language**: TypeScript / JavaScript
-- **Database**: PostgreSQL
-- **ORM**: Prisma / TypeORM
-- **Authentication**: JWT / Passport.js
-- **API**: RESTful APIs
-- **Validation**: Joi / Zod
+- **Platform**: Firebase or Supabase (BaaS)
+- **Language**: TypeScript (Cloud/Edge Functions)
+- **Database**: Firestore/Realtime Database (Firebase) or PostgreSQL (Supabase)
+- **Authentication**: Firebase Auth / Supabase Auth
+- **API**: RESTful APIs via Cloud Functions / Edge Functions, or direct client SDK access
+- **Validation**: Zod
 
 ### Database
-- **Primary Database**: PostgreSQL
-- **ORM**: Prisma (preferred) / TypeORM
-- **Migrations**: Prisma Migrate / TypeORM CLI
-- **Connection Pooling**: PgBouncer
-- **Backup**: Automated PostgreSQL backups
+- **Primary Options**: Firebase (Firestore, NoSQL) or Supabase (PostgreSQL, SQL)
+- **Client SDKs**: `firebase` / `@supabase/supabase-js`
+- **Migrations**: Supabase CLI migrations (SQL-based) when using Supabase
+- **Auth-integrated Row Level Security**: Supabase RLS policies / Firestore security rules
+- **Backup**: Automated backups via Firebase/Supabase managed infrastructure
 
 ### Cloud Platforms
 - **Primary**: AWS (Amazon Web Services)
@@ -90,20 +88,19 @@ mobile-app/
 └── assets/                 # Images, fonts, etc.
 ```
 
-### Backend (Express.js)
+### Backend (Firebase / Supabase)
 ```
 backend/
-├── src/
-│   ├── controllers/        # Route controllers
-│   ├── models/             # Database models
-│   ├── routes/             # API routes
-│   ├── middleware/         # Custom middleware
-│   ├── services/           # Business logic
-│   ├── utils/              # Utility functions
-│   └── types/              # TypeScript definitions
-├── prisma/                 # Database schema and migrations
-├── tests/                  # Test files
-└── docs/                   # API documentation
+├── functions/               # Cloud Functions (Firebase) / Edge Functions (Supabase)
+│   ├── src/
+│   │   ├── handlers/        # Function entry points
+│   │   ├── services/        # Business logic
+│   │   ├── utils/           # Utility functions
+│   │   └── types/           # TypeScript definitions
+├── migrations/               # Supabase SQL migrations (if using Supabase)
+├── security-rules/           # Firestore/Storage rules (if using Firebase)
+├── tests/                    # Test files
+└── docs/                     # API documentation
 ```
 
 ### Full-Stack Project Structure
@@ -111,10 +108,9 @@ backend/
 full-stack-project/
 ├── web-frontend/           # Next.js React app
 ├── mobile-app/             # Flutter mobile app
-├── backend/                # Express.js API
+├── backend/                # Firebase/Supabase project
 ├── shared/                 # Shared types and utilities
 ├── docs/                   # Project documentation
-├── docker-compose.yml      # Local development setup
 └── README.md               # Project overview
 ```
 
@@ -141,12 +137,13 @@ full-stack-project/
 - Use const constructors where possible
 - Follow Material Design guidelines
 
-### Express.js (Backend)
+### Firebase / Supabase (Backend)
 - Use async/await for asynchronous operations
-- Implement proper error handling middleware
-- Use TypeScript for type safety
-- Follow RESTful API conventions
-- Implement proper input validation
+- Keep Cloud/Edge Functions small and single-purpose
+- Use TypeScript for type safety across functions
+- Follow RESTful conventions for any exposed HTTP functions
+- Enforce data access rules at the database layer (Firestore security rules / Supabase RLS), not just in application code
+- Implement proper input validation with Zod before writes
 
 ### CSS/Styling (Web)
 - Use Tailwind CSS utility classes
@@ -172,27 +169,26 @@ full-stack-project/
 ### Security
 - Validate all inputs on both frontend and backend
 - Use environment variables for secrets
-- Implement proper authentication (JWT)
+- Implement proper authentication (Firebase Auth / Supabase Auth)
 - Follow OWASP security guidelines
 - Use HTTPS in production
-- Implement proper CORS policies
+- Implement proper CORS policies on any exposed functions
 
-### Database (PostgreSQL)
-- Use proper indexing strategies
-- Implement connection pooling
-- Use transactions for data consistency
-- Regular backups and monitoring
-- Use prepared statements to prevent SQL injection
+### Database (Firebase / Supabase)
+- Firestore: design collections around query patterns, use composite indexes
+- Supabase (PostgreSQL): use proper indexing strategies and prepared statements
+- Enforce Row Level Security (Supabase) / security rules (Firestore) as the primary access control layer
+- Use transactions for multi-document/multi-row consistency
+- Regular backups and monitoring via platform dashboard
 
 ## Getting Started
 
 ### Prerequisites
-- **Node.js 18+** (for web frontend and backend)
+- **Node.js 18+** (for web frontend and backend functions)
 - **Flutter SDK** (for mobile development)
-- **PostgreSQL** (for database)
+- **Firebase CLI** or **Supabase CLI** (for backend/database)
 - **npm/pnpm** (package manager)
 - **Git** (version control)
-- **Docker** (optional, for containerized development)
 
 ### Web Frontend Setup
 ```bash
@@ -222,22 +218,22 @@ flutter pub get
 flutter run
 ```
 
-### Backend Setup
+### Backend Setup (Supabase)
 ```bash
-# Navigate to backend directory
+# Install the Supabase CLI, then from the backend directory:
 cd <project-name>/backend
+supabase init
+supabase start          # local Postgres + Studio
+supabase db push        # apply SQL migrations
+supabase functions serve
+```
 
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env
-
-# Run database migrations
-npm run db:migrate
-
-# Start development server
-npm run dev
+### Backend Setup (Firebase)
+```bash
+cd <project-name>/backend
+firebase login
+firebase init            # Firestore, Functions, Auth
+firebase emulators:start
 ```
 
 ### Environment Variables
@@ -253,21 +249,18 @@ NEXTAUTH_SECRET="your-secret"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 
-#### Backend (.env)
+#### Backend (.env) — Supabase
 ```env
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
+SUPABASE_URL="https://your-project.supabase.co"
+SUPABASE_ANON_KEY="your-anon-key"
+SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"  # server-side only, never expose to client
+```
 
-# Server Configuration
-PORT=5000
-NODE_ENV="development"
-
-# Authentication
-JWT_SECRET="your-jwt-secret"
-JWT_EXPIRES_IN="7d"
-
-# External APIs
-API_KEY="your-api-key"
+#### Backend (.env) — Firebase
+```env
+FIREBASE_PROJECT_ID="your-project-id"
+FIREBASE_CLIENT_EMAIL="your-service-account-email"
+FIREBASE_PRIVATE_KEY="your-service-account-private-key"
 ```
 
 #### Mobile App (config.dart)
@@ -294,18 +287,25 @@ class Config {
 }
 ```
 
-### Backend (package.json)
+### Backend (package.json) — Supabase Edge Functions
 ```json
 {
-  "dev": "nodemon src/index.ts",
-  "build": "tsc",
-  "start": "node dist/index.js",
-  "lint": "eslint src/**/*.ts",
-  "test": "jest",
-  "test:watch": "jest --watch",
-  "db:migrate": "prisma migrate dev",
-  "db:generate": "prisma generate",
-  "db:studio": "prisma studio"
+  "dev": "supabase functions serve",
+  "deploy": "supabase functions deploy",
+  "db:push": "supabase db push",
+  "db:diff": "supabase db diff",
+  "lint": "eslint functions/**/*.ts",
+  "test": "jest"
+}
+```
+
+### Backend (package.json) — Firebase Cloud Functions
+```json
+{
+  "dev": "firebase emulators:start",
+  "deploy": "firebase deploy --only functions",
+  "lint": "eslint functions/**/*.ts",
+  "test": "jest"
 }
 ```
 
@@ -336,9 +336,9 @@ flutter analyze          # Analyze code
 - [Flutter Widget Catalog](https://docs.flutter.dev/development/ui/widgets)
 
 ### Backend Development
-- [Express.js Documentation](https://expressjs.com/)
+- [Firebase Documentation](https://firebase.google.com/docs)
+- [Supabase Documentation](https://supabase.com/docs)
 - [Node.js Documentation](https://nodejs.org/docs/)
-- [Prisma Documentation](https://www.prisma.io/docs/)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 
 ### Cloud Platforms
@@ -362,30 +362,22 @@ For questions or issues, please refer to the project-specific README or contact 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Web Frontend  │    │   Mobile App    │    │    Backend      │
-│   (Next.js)     │    │   (Flutter)     │    │  (Express.js)   │
-│                 │    │                 │    │                 │
-│  - React        │    │  - Dart         │    │  - Node.js      │
-│  - TypeScript   │    │  - Material UI  │    │  - TypeScript   │
-│  - Tailwind CSS │    │  - State Mgmt   │    │  - REST APIs    │
+│   (Next.js)     │    │   (Flutter)     │    │ (Firebase/      │
+│                 │    │                 │    │  Supabase)      │
+│  - React        │    │  - Dart         │    │  - Cloud/Edge   │
+│  - TypeScript   │    │  - Material UI  │    │    Functions    │
+│  - Tailwind CSS │    │  - State Mgmt   │    │  - TypeScript   │
 └─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
           │                      │                      │
           └──────────────────────┼──────────────────────┘
                                  │
                     ┌─────────────┴─────────────┐
-                    │      PostgreSQL           │
-                    │      Database             │
+                    │   Firebase / Supabase     │
                     │                          │
-                    │  - Data Storage          │
-                    │  - Prisma ORM            │
-                    │  - Migrations            │
-                    └──────────────────────────┘
-                                 │
-                    ┌─────────────┴─────────────┐
-                    │    Cloud Platforms        │
-                    │                          │
-                    │  - AWS (Primary)         │
-                    │  - Google Cloud (GCP)    │
-                    │  - Container Deployment  │
-                    │  - Serverless Functions  │
+                    │  - Firestore / Postgres  │
+                    │  - Auth                  │
+                    │  - Storage               │
+                    │  - Row Level Security /  │
+                    │    Security Rules        │
                     └──────────────────────────┘
 ```

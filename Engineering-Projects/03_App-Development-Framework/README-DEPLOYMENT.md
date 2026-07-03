@@ -3,6 +3,8 @@
 ## Overview
 This guide covers deployment strategies and configurations for different environments.
 
+> **Preferred stack**: For this framework's default backend (Firebase/Supabase), most of these steps are handled by the platform's managed hosting — deploy the web frontend to Vercel and push backend changes with `firebase deploy` / `supabase db push` + `supabase functions deploy`. The self-hosted Docker + PostgreSQL sections below are kept as a fallback for fully self-managed deployments.
+
 ## Prerequisites
 
 ### Required Tools
@@ -247,7 +249,19 @@ docker-compose up -d
 
 ## Database Setup
 
-### PostgreSQL
+### Supabase (preferred)
+```bash
+supabase link --project-ref your-project-ref
+supabase db push          # apply SQL migrations
+supabase db seed          # seed data (optional)
+```
+
+### Firebase (preferred)
+```bash
+firebase deploy --only firestore:rules,firestore:indexes
+```
+
+### Self-hosted PostgreSQL (fallback)
 ```bash
 # Create database
 createdb your-app-db

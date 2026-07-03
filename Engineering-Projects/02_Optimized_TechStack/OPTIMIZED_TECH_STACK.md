@@ -1,9 +1,10 @@
-# Optimized Tech Stack: MATLAB + Python + SQL + Strategic Additions
+# Optimized Tech Stack: MATLAB + Python + SQL + C/C++ + Strategic Additions
 
 ## 🎯 Core Foundation (Your Original Idea)
 - **MATLAB** - Engineering calculations, signal processing, control systems
 - **Python** - Data engineering, ML/AI, web development, automation  
 - **SQL** - Data management, analytics, backend systems
+- **C/C++** - High-performance computing, embedded/firmware, low-level hardware interfacing
 
 ## 🚀 Strategic Additions for Complete Coverage
 
@@ -44,7 +45,8 @@
 ### 🎯 Perfect For Your Use Cases
 - **Biomedical Engineering**: MATLAB for signal processing + Python for ML + SQL for patient data
 - **Mechanical Engineering**: MATLAB for control systems + Python for automation + SQL for sensor data
-- **App Development**: Python web frameworks + React frontend + SQL database
+- **Embedded/Hardware**: C/C++ for firmware and microcontrollers, bridged to Python for tooling/automation
+- **App Development**: Python web frameworks + React/Next.js frontend + SQL database (Firebase/Supabase)
 - **Data Engineering**: Python for ETL + SQL for data warehousing + cloud deployment
 
 ## 🛠️ Recommended Implementation

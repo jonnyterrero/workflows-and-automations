@@ -1,12 +1,13 @@
-# Optimized Tech Stack: MATLAB + Python + SQL + Strategic Additions
+# Optimized Tech Stack: MATLAB + Python + SQL + C/C++ + Strategic Additions
 
-This folder contains a **focused, efficient tech stack** built around your core idea of MATLAB + Python + SQL, with strategic additions for complete coverage of biomedical/mechanical engineering, app development, and data engineering.
+This folder contains a **focused, efficient tech stack** built around your core idea of MATLAB + Python + SQL + C/C++, with strategic additions for complete coverage of biomedical/mechanical engineering, app development, and data engineering.
 
 ## 🎯 Core Foundation (Your Original Idea)
 
 - **MATLAB** - Engineering calculations, signal processing, control systems
 - **Python** - Data engineering, ML/AI, web development, automation  
 - **SQL** - Data management, analytics, backend systems
+- **C/C++** - High-performance computing, embedded systems, firmware/hardware interfacing
 
 ## 🚀 Strategic Additions
 
@@ -80,13 +81,13 @@ Open http://localhost:8000/docs in your browser
 ## 🎯 Sample Projects You Can Build
 
 ### Biomedical Data App
-- **Frontend**: React dashboard for patient monitoring
-- **Backend**: FastAPI with real-time data processing
-- **Database**: PostgreSQL for patient records
+- **Frontend**: Next.js/React dashboard for patient monitoring
+- **Backend**: FastAPI with real-time data processing (or Firebase/Supabase functions)
+- **Database**: SQL via Firebase/Supabase for patient records
 - **Analysis**: MATLAB for signal processing, Python for ML
 
 ### Mechanical Control System
-- **Sensors**: Data collection and storage in SQL
+- **Sensors**: Data collection and storage in SQL, firmware in C/C++
 - **Control**: MATLAB algorithms for system control
 - **Interface**: Python web app for monitoring
 - **Visualization**: Real-time dashboards with React

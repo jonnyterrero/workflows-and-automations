@@ -11,10 +11,15 @@ This folder contains a **comprehensive collection** of tools, libraries, and res
 
 ### CAD & Design Software
 - **SolidWorks** - Industry standard 3D modeling
+- **OnShape** - Cloud-native, browser-based parametric CAD
 - **Autodesk Inventor** - Parametric design
 - **FreeCAD** - Open-source CAD
 - **Fusion 360** - Cloud-based CAD/CAM
 - **CATIA** - Advanced surface modeling
+
+### Electronics & PCB Design
+- **KiCad** - Open-source schematic capture and PCB design
+- **Altium Designer** - Professional PCB design (commercial)
 
 ### Simulation & Analysis
 - **ANSYS** - FEA, CFD, electromagnetic simulation

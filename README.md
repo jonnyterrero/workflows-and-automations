@@ -4,6 +4,22 @@ Personal Claude Code setup, MCP integrations, plugins, and the **Obsidian Second
 
 ---
 
+## Tech Stack
+
+### Engineering
+- **Languages**: MATLAB, Python, SQL, C/C++
+- **Comprehensive tooling** (CAD/EDA/simulation, see [`Engineering-Projects/01_Comprehensive_TechStack`](./Engineering-Projects/01_Comprehensive_TechStack)): OnShape, SolidWorks, MATLAB, KiCad, ANSYS, COMSOL, Fusion 360, and more
+
+### Full-Stack / App Development
+- **Frontend**: Next.js, React, TypeScript
+- **Mobile**: Flutter
+- **Database**: SQL
+- **Backend/BaaS**: Firebase / Supabase
+
+See [`Engineering-Projects/`](./Engineering-Projects) for the full breakdown of the comprehensive and optimized engineering stacks, plus the app development framework docs.
+
+---
+
 ## Obsidian Second Brain — Install Guide
 
 This setup connects Claude Code to your Obsidian vault via MCP so Claude can:
@@ -235,6 +251,10 @@ Claude will never read the following without your explicit instruction:
 ├── README.md                          # This file
 ├── CLAUDE.md                          # Project-level Claude Code config
 ├── .mcp.json                          # MCP server configuration
+├── Engineering-Projects/              # Engineering + app dev tech stacks (merged via git subtree)
+│   ├── 01_Comprehensive_TechStack/
+│   ├── 02_Optimized_TechStack/
+│   └── 03_App-Development-Framework/
 ├── obsidian-second-brain/             # Vault note templates
 │   ├── Claude Context Hub.md
 │   ├── Claude Session Capture.md

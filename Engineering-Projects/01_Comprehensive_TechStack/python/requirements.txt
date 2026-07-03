@@ -1,0 +1,59 @@
+# Core Scientific Computing
+numpy>=1.24.0
+scipy>=1.10.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Machine Learning & AI
+scikit-learn>=1.3.0
+tensorflow>=2.13.0
+pytorch>=2.0.0
+keras>=2.13.0
+
+# Image Processing & Computer Vision
+opencv-python>=4.8.0
+Pillow>=10.0.0
+scikit-image>=0.21.0
+imageio>=2.31.0
+
+# Signal Processing
+scipy>=1.10.0
+librosa>=0.10.0
+pywt>=1.4.0
+
+# Data Visualization
+plotly>=5.15.0
+bokeh>=3.2.0
+dash>=2.11.0
+
+# Biomedical Engineering
+biopython>=1.81
+pydicom>=2.4.0
+nibabel>=5.1.0
+SimpleITK>=2.2.0
+
+# Mechanical Engineering
+sympy>=1.12
+control>=0.9.4
+pint>=0.21.0
+
+# Simulation & Modeling
+meshlab>=2022.2
+trimesh>=3.23.0
+pyvista>=0.42.0
+
+# Data Analysis & Statistics
+statsmodels>=0.14.0
+pingouin>=0.5.3
+
+# Jupyter & Development
+jupyter>=1.0.0
+jupyterlab>=4.0.0
+ipywidgets>=8.0.0
+
+# Utilities
+tqdm>=4.65.0
+requests>=2.31.0
+pyyaml>=6.0
+

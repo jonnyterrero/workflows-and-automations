@@ -1,0 +1,115 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+engineering_env/
+venv/
+env/
+ENV/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# MATLAB
+*.asv
+*.m~
+*.mat
+*.fig
+*.mlx
+
+# CAD Files (large binary files)
+*.sldprt
+*.sldasm
+*.slddrw
+*.ipt
+*.iam
+*.idw
+*.f3d
+*.step
+*.stp
+*.iges
+*.igs
+
+# Simulation Files
+*.wbpj
+*.wbpz
+*.mph
+*.mph.lock
+*.mph.save
+*.mph.save.lock
+
+# Data Files
+*.csv
+*.xlsx
+*.xls
+*.h5
+*.hdf5
+*.nc
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.tiff
+*.tif
+*.bmp
+*.gif
+
+# Videos
+*.mp4
+*.avi
+*.mov
+*.wmv
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Results and outputs
+results/
+outputs/
+plots/
+figures/
+

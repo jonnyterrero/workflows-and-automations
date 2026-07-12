@@ -1,6 +1,22 @@
-# Jonny's Workflow & Automations
+# Workflows & Automations
 
-Personal Claude Code setup, MCP integrations, plugins, and the **Obsidian Second Brain** — a system that lets Claude use your Obsidian vault as persistent memory across sessions.
+Personal automation hub for Claude Code, MCP integrations, plugins, research tooling, and the **Obsidian Second Brain** — a system that lets Claude use your Obsidian vault as persistent memory across sessions.
+
+**Repo:** [jonnyterrero/workflows-and-automations](https://github.com/jonnyterrero/workflows-and-automations)  
+**Nested AI helper:** [`JonnyJr/`](./JonnyJr) → [jonnyterrero/JonnyJr](https://github.com/jonnyterrero/JonnyJr)
+
+---
+
+## What's Inside
+
+| Area | Path | Purpose |
+|------|------|---------|
+| **JonnyJr** | [`JonnyJr/`](./JonnyJr) | AI research helper — automated research, synthesis, scheduled workflows, PR creation |
+| **Engineering stacks** | [`Engineering-Projects/`](./Engineering-Projects) | Engineering + app-dev tech stacks (MATLAB/Python/SQL/C++, Next.js/Flutter/Supabase) |
+| **Automations** | [`7-automations/`](./7-automations) | Make.com / Second Brain chief-of-staff automations |
+| **Agent setups** | [`agent-trio/`](./agent-trio), [`trading-intelligence-agent/`](./trading-intelligence-agent) | Multi-agent and trading intelligence configs |
+| **Claude plugins** | `claude-*-plugin-upload/` | Packaged Claude Code plugins (ruflo, context7, mem, repomix, etc.) |
+| **Claude config** | [`CLAUDE.md`](./CLAUDE.md), [`.mcp.json`](./.mcp.json) | Project-level Claude Code rules and MCP servers |
 
 ---
 
@@ -8,7 +24,7 @@ Personal Claude Code setup, MCP integrations, plugins, and the **Obsidian Second
 
 ### Engineering
 - **Languages**: MATLAB, Python, SQL, C/C++
-- **Comprehensive tooling** (CAD/EDA/simulation, see [`Engineering-Projects/01_Comprehensive_TechStack`](./Engineering-Projects/01_Comprehensive_TechStack)): OnShape, SolidWorks, MATLAB, KiCad, ANSYS, COMSOL, Fusion 360, and more
+- **Tooling**: OnShape, SolidWorks, MATLAB, KiCad, ANSYS, COMSOL, Fusion 360, and more — see [`Engineering-Projects/01_Comprehensive_TechStack`](./Engineering-Projects/01_Comprehensive_TechStack)
 
 ### Full-Stack / App Development
 - **Frontend**: Next.js, React, TypeScript
@@ -16,13 +32,35 @@ Personal Claude Code setup, MCP integrations, plugins, and the **Obsidian Second
 - **Database**: SQL
 - **Backend/BaaS**: Firebase / Supabase
 
-See [`Engineering-Projects/`](./Engineering-Projects) for the full breakdown of the comprehensive and optimized engineering stacks, plus the app development framework docs.
+---
+
+## JonnyJr (nested)
+
+[`JonnyJr/`](./JonnyJr) is nested here via git subtree from [jonnyterrero/JonnyJr](https://github.com/jonnyterrero/JonnyJr). It is the AI research helper: daily/nightly research workflows, synthesis scripts, and auto-PR reporting.
+
+```bash
+# From JonnyJr/
+cd JonnyJr
+npm install
+npm run research      # run research
+npm run synthesize    # synthesize findings
+npm run open-pr       # open review PR
+npm test
+```
+
+Upstream sync (when JonnyJr remote history changes):
+
+```bash
+git remote add jonnyjr https://github.com/jonnyterrero/JonnyJr.git   # once
+git fetch jonnyjr main
+git subtree pull --prefix=JonnyJr jonnyjr main --squash
+```
 
 ---
 
 ## Obsidian Second Brain — Install Guide
 
-This setup connects Claude Code to your Obsidian vault via MCP so Claude can:
+Connect Claude Code to your Obsidian vault via MCP so Claude can:
 - Read your context at the start of every session
 - Search your notes on demand
 - Capture decisions, patterns, and summaries back into the vault
@@ -37,19 +75,13 @@ Context Hub      →     vault on demand   →    outputs back
 for orientation        when you ask           into vault
 ```
 
----
-
-## Prerequisites
+### Prerequisites
 
 - [Obsidian](https://obsidian.md) installed with a vault set up
 - [Claude Code](https://docs.anthropic.com/claude-code) installed (`npm install -g @anthropic-ai/claude-code`)
 - Node.js 18+
 
----
-
-## Step 1 — Install the Obsidian Local REST API Plugin
-
-This plugin exposes your vault over a local HTTPS API that Claude Code connects to via MCP.
+### Step 1 — Install the Obsidian Local REST API Plugin
 
 1. Open Obsidian → **Settings → Community Plugins → Browse**
 2. Search for **"Local REST API"** by coddingtonbear
@@ -60,11 +92,7 @@ This plugin exposes your vault over a local HTTPS API that Claude Code connects 
 
 > Keep the API key safe — treat it like a password. Do not commit it to any repo.
 
----
-
-## Step 2 — Add the Obsidian MCP to Claude Code
-
-Run this in your terminal:
+### Step 2 — Add the Obsidian MCP to Claude Code
 
 ```bash
 claude mcp add obsidian-batcave \
@@ -72,7 +100,7 @@ claude mcp add obsidian-batcave \
   https://127.0.0.1:27124/
 ```
 
-Or add it manually to your `~/.claude/claude_desktop_config.json` or project `.mcp.json`:
+Or add it manually to `~/.claude/claude_desktop_config.json` or project `.mcp.json`:
 
 ```json
 {
@@ -91,114 +119,41 @@ Replace `YOUR_API_KEY_HERE` with the key from the Obsidian plugin settings.
 
 > **Never commit your API key.** Add `.mcp.json` to `.gitignore` if it contains secrets, or use environment variable substitution.
 
----
+### Step 3 — Set Up the Global CLAUDE.md
 
-## Step 3 — Set Up the Global CLAUDE.md
+Create `~/.claude/CLAUDE.md` with session-start rules that read `60-Dashboards/Claude Context Hub.md` from the vault, apply coding defaults, enforce privacy rules, and offer session-end captures. See the project [`CLAUDE.md`](./CLAUDE.md) and prior vault templates for the full template.
 
-This file is read automatically by Claude Code at every session start.
-
-Create `~/.claude/CLAUDE.md` with the following content:
-
-```markdown
-# Claude Global Config
-
-## Session Start
-
-At the start of every Claude Code session, if the Obsidian MCP is available:
-1. Read `60-Dashboards/Claude Context Hub.md` from my Obsidian vault using the obsidian-batcave MCP tool.
-2. Use it to orient around my preferences, active projects, tools, and privacy rules.
-3. Do not scan the whole vault.
-4. Retrieve linked notes only when directly relevant to the task.
-5. Ask before reading any private area.
-
-If the Obsidian MCP is unavailable, say so briefly and continue. Do not block the session.
-
-## Coding Defaults
-
-- Typed, modular, production-quality code — no tutorial scaffolding
-- Direct and implementation-focused — no filler
-- Flag architectural debt, risky trade-offs, and security issues proactively
-- Prefer editing existing files over creating new ones
-- Validate inputs at system boundaries
-- Never hardcode or expose secrets, tokens, credentials, or `.env` values
-
-## Privacy Rules
-
-Never read without explicit instruction:
-- Finance notes, habit tracker, journals, health/medical logs
-- Notes tagged `#private` or `#journal`
-- Files containing credentials, API keys, tokens, passwords, or `.env` content
-
-Always ask before:
-- Modifying existing vault notes
-- Reading sensitive personal areas beyond Task List and Weekly To-do
-- Accessing archived or migrated data
-
-## Session End
-
-When a session produced decisions, summaries, patterns, or next actions — offer to capture them.
-Route captures per the rules in `60-Dashboards/Claude Context Hub.md`.
-Do not save raw transcripts unless explicitly requested.
-```
-
----
-
-## Step 4 — Create the Vault Notes
-
-Create these three notes in your Obsidian vault:
+### Step 4 — Create the Vault Notes
 
 | Note | Vault Path | Purpose |
-|---|---|---|
+|------|------------|---------|
 | Claude Context Hub | `60-Dashboards/Claude Context Hub.md` | Session-start orientation for Claude |
 | Claude Session Capture | `50-Templates/Claude Session Capture.md` | End-of-session capture template |
 | Claude Second Brain Guide | `60-Dashboards/Claude Second Brain Guide.md` | Usage guide |
 
-Templates are in [`obsidian-second-brain/`](./obsidian-second-brain/). Copy them into the matching paths in your vault and update the "Who I Am" and "Active Projects" sections with your own info.
-
----
-
-## Step 5 — Verify the Connection
-
-Open Claude Code and run:
+### Step 5 — Verify the Connection
 
 ```
 Read 60-Dashboards/Claude Context Hub.md from my Obsidian vault and confirm you can see it.
 ```
 
-Claude should respond with the contents of your Context Hub. If it fails:
-- Check that Obsidian is open and the Local REST API plugin is running
-- Verify the API key in your MCP config
-- Check the port matches (default `27124`)
+If it fails: Obsidian open + Local REST API running, API key correct, port `27124`.
 
 ---
 
 ## Daily Usage
 
-### Start a session (Claude Code — automatic)
-Claude Code reads `~/.claude/CLAUDE.md` on startup and loads your context automatically.
+**Start (Claude Code):** automatic via `~/.claude/CLAUDE.md`
 
-### Start a session (Claude.ai or other — manual)
-Paste this:
+**Start (manual):**
 ```
 Read 60-Dashboards/Claude Context Hub.md from my Obsidian vault to orient yourself.
 ```
 
-### Search your vault
+**Search / capture:**
 ```
 Search my vault for notes on [topic].
-What do I have in Obsidian about [project]?
-Check my task list for current priorities.
-```
-
-### Capture a session
-```
 Capture this session using the session capture template.
-Save a summary of what we just built to 00-Inbox/.
-```
-
-### Grant private access for a session
-```
-You have permission to read my finance tracker this session.
 ```
 
 ---
@@ -217,12 +172,10 @@ vault/
 └── attachments/
 ```
 
----
-
-## Capture Routing
+### Capture Routing
 
 | Content Type | Target Path |
-|---|---|
+|--------------|-------------|
 | Architecture decisions | `20-Projects/<project>/` |
 | Reusable code patterns | `30-Reference/concepts/` |
 | Research & articles | `30-Reference/literature/` |
@@ -230,17 +183,12 @@ vault/
 | School notes | `School Notes/` or `Learning Hub/` |
 | Session summaries | `20-Projects/<project>/` or `00-Inbox/` |
 
----
+### Privacy
 
-## Privacy
-
-Claude will never read the following without your explicit instruction:
-- Finance notes
-- Habit tracker
-- Private journals or personal logs
-- Health or medical notes
-- Files tagged `#private`
-- Any credentials, API keys, tokens, or `.env` content
+Claude will never read without explicit instruction:
+- Finance notes, habit tracker, journals, health/medical logs
+- Notes tagged `#private` or `#journal`
+- Credentials, API keys, tokens, or `.env` content
 
 ---
 
@@ -251,23 +199,19 @@ Claude will never read the following without your explicit instruction:
 ├── README.md                          # This file
 ├── CLAUDE.md                          # Project-level Claude Code config
 ├── .mcp.json                          # MCP server configuration
-├── Engineering-Projects/              # Engineering + app dev tech stacks (merged via git subtree)
-│   ├── 01_Comprehensive_TechStack/
-│   ├── 02_Optimized_TechStack/
-│   └── 03_App-Development-Framework/
-├── obsidian-second-brain/             # Vault note templates
-│   ├── Claude Context Hub.md
-│   ├── Claude Session Capture.md
-│   └── Claude Second Brain Guide.md
-├── 7-automations/                     # Make.com and automation configs
+├── JonnyJr/                           # AI research helper (subtree → jonnyterrero/JonnyJr)
+├── Engineering-Projects/              # Engineering + app dev tech stacks (subtree)
+├── 7-automations/                     # Make.com and Second Brain automations
 ├── agent-trio/                        # Multi-agent setups
-└── [claude-*-plugin-upload]/          # Claude Code plugin packages
+├── trading-intelligence-agent/        # Trading intelligence agent
+└── claude-*-plugin-upload/            # Claude Code plugin packages
 ```
 
 ---
 
 ## Related
 
+- [JonnyJr](https://github.com/jonnyterrero/JonnyJr) — standalone AI research repository
 - [Obsidian Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)
 - [Claude Code docs](https://docs.anthropic.com/claude-code)
 - [Model Context Protocol](https://modelcontextprotocol.io)

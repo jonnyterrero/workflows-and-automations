@@ -1,0 +1,30 @@
+{
+  "name": "Prevent Old Branch Patterns",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/ai/research-*",
+        "refs/heads/art-*",
+        "refs/heads/homework-*",
+        "refs/heads/project-*",
+        "refs/heads/research-*"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "creation",
+      "parameters": {}
+    },
+    {
+      "type": "update",
+      "parameters": {
+        "update_allows_fetch_and_merge": false
+      }
+    }
+  ]
+}
+

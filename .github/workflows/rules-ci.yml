@@ -1,0 +1,28 @@
+name: Rules CI
+on:
+  push:
+    paths: [".cursor/rules/**", ".github/ISSUE_TEMPLATE/**"]
+  pull_request:
+    paths: [".cursor/rules/**", ".github/ISSUE_TEMPLATE/**"]
+
+jobs:
+  check-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify rule files are Markdown and non-empty
+        run: |
+          failed=0
+          for f in $(git ls-files ".cursor/rules/*.md"); do
+            if [ ! -s "$f" ]; then
+              echo "::error file=$f::Rule file is empty"
+              failed=1
+            fi
+          done
+          exit $failed
+
+      - name: Heuristic sync checks
+        run: |
+          grep -R "type:reminder" -n .github/ISSUE_TEMPLATE || echo "::warning ::No 'type:reminder' in templates"
+          grep -R "school/" -n .cursor/rules || echo "::warning ::Rules may not reference 'school/'"

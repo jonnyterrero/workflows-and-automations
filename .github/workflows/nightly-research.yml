@@ -1,0 +1,106 @@
+name: Nightly Research
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Research topic for overnight research (e.g., "open issues summary", "upcoming coursework")'
+        required: false
+        default: 'Open issues summary & related papers'
+      archive_date:
+        description: 'Date to archive under (YYYY-MM-DD). Defaults to today.'
+        required: false
+        default: ''
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Install deps
+        run: |
+          npm install
+          cd packages/ts && npm install
+      - name: Set archive date
+        id: set_date
+        run: |
+          if [ -z "${{ github.event.inputs.archive_date }}" ]; then
+            ARCHIVE_DATE=$(date -u +%F)
+          else
+            ARCHIVE_DATE="${{ github.event.inputs.archive_date }}"
+          fi
+          echo "ARCHIVE_DATE=$ARCHIVE_DATE" >> $GITHUB_ENV
+          echo "📅 Archiving research under date: $ARCHIVE_DATE"
+          
+      - name: Research & summarize
+        env:
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          mkdir -p docs/nightly
+          echo "🔬 Starting research on: ${{ github.event.inputs.topic }}"
+          npx ts-node scripts/research.ts "${{ github.event.inputs.topic }}"
+          mv RESEARCH.md docs/nightly/${ARCHIVE_DATE}.md
+          
+          echo "📝 Synthesizing research..."
+          npx ts-node scripts/synthesize.ts docs/nightly/${ARCHIVE_DATE}.md \
+            > docs/nightly/${ARCHIVE_DATE}-syn.md
+          
+          echo "✅ Research archived to docs/nightly/${ARCHIVE_DATE}.md"
+          
+      - name: Configure git
+        env:
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          if [ -z "$ACTIONS_PAT" ]; then
+            echo "ACTIONS_PAT is not set; skipping commit" >&2
+            exit 0
+          fi
+          git config --global --unset-all http.https://github.com/.extraheader || true
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git remote remove origin || true
+          git remote add origin https://${GITHUB_ACTOR}:${{ secrets.ACTIONS_PAT }}@github.com/${{ github.repository }}.git
+          
+      - name: Commit nightly research
+        env:
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          if [ -z "$ACTIONS_PAT" ]; then
+            echo "⚠️  ACTIONS_PAT not set. Research results saved but not committed."
+            echo "To commit automatically, add ACTIONS_PAT secret to repository."
+            exit 0
+          fi
+          
+          # Use consistent branch name for this workflow
+          BRANCH_NAME="workflow/nightly-research"
+          echo "📦 Using branch: $BRANCH_NAME"
+          
+          # Fetch all branches
+          git fetch origin || true
+          
+          # Remove local branch if it exists (clean slate)
+          git branch -D "$BRANCH_NAME" 2>/dev/null || true
+          
+          # Checkout existing remote branch or create new one
+          if git show-ref --verify --quiet refs/remotes/origin/"$BRANCH_NAME"; then
+            echo "✅ Branch exists remotely, checking out..."
+            git checkout -b "$BRANCH_NAME" "origin/$BRANCH_NAME" || git checkout "$BRANCH_NAME"
+          else
+            echo "🆕 Creating new branch from main..."
+            git checkout -b "$BRANCH_NAME" main || git checkout -b "$BRANCH_NAME"
+          fi
+          
+          git add docs/nightly/${ARCHIVE_DATE}*.md || true
+          
+          if git diff --staged --quiet; then
+            echo "ℹ️  No changes to commit (files may be unchanged)"
+            exit 0
+          fi
+          
+          git commit -m "Nightly research: ${{ github.event.inputs.topic }} ($ARCHIVE_DATE)" || exit 0
+          git push --force-with-lease origin "$BRANCH_NAME" || git push --force origin "$BRANCH_NAME" || exit 0
+          
+          echo "✅ Nightly research committed to branch: $BRANCH_NAME"

@@ -1,0 +1,32 @@
+{
+  "name": "Workflow Branches - AI Helper Updates",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": [
+        "refs/heads/workflow/*"
+      ],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "deletion",
+      "parameters": {}
+    },
+    {
+      "type": "update",
+      "parameters": {
+        "update_allows_fetch_and_merge": true
+      }
+    }
+  ],
+  "bypass_actors": [
+    {
+      "actor_type": "Integration",
+      "bypass_mode": "always"
+    }
+  ]
+}
+

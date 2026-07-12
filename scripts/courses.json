@@ -1,0 +1,137 @@
+{
+  "courses": {
+    "MAP2302": {
+      "name": "Differential Equations",
+      "subject": "Mathematics",
+      "credits": 3,
+      "current": true,
+      "term": "Summer 2025",
+      "category": "Math & Coding",
+      "keywords": ["differential equation", "laplace", "transform", "ode", "pde", "integration factor", "separation of variables"],
+      "commonTopics": ["Laplace transforms", "First-order ODEs", "Second-order linear ODEs", "Series solutions", "Systems of ODEs"],
+      "textbooks": ["Boyce & DiPrima - Elementary Differential Equations", "Zill - A First Course in Differential Equations"],
+      "tools": ["MATLAB", "Python (scipy.integrate)", "Symbolic Math Toolbox"],
+      "typicalAssignments": ["Laplace transform problems", "Solving ODEs analytically", "Numerical methods", "Applications to engineering"]
+    },
+    "PHY2049": {
+      "name": "General Physics II with Lab",
+      "fullName": "PHY 2049 & PHY 2049L",
+      "subject": "Physics",
+      "credits": 4,
+      "current": true,
+      "term": "Summer 2025",
+      "category": "Sciences",
+      "keywords": ["electricity", "magnetism", "optics", "electromagnetic", "coulomb", "gauss", "circuit", "capacitor", "inductor"],
+      "commonTopics": ["Electrostatics", "Electric fields and potentials", "Magnetism", "Electromagnetic induction", "AC/DC circuits", "Optics"],
+      "textbooks": ["Halliday & Resnick - Fundamentals of Physics", "Giancoli - Physics for Scientists and Engineers"],
+      "tools": ["MATLAB", "Python (numpy, matplotlib)", "Circuit simulators"],
+      "typicalAssignments": ["Circuit analysis", "Field calculations", "Optics problems", "Lab reports"]
+    },
+    "BME3100C": {
+      "name": "Introduction to Biomaterials",
+      "subject": "Bioengineering",
+      "credits": 3,
+      "upcoming": true,
+      "term": "Fall 2025",
+      "category": "Sciences",
+      "keywords": ["biomaterial", "biocompatibility", "tissue", "implant", "polymer", "ceramic", "metal", "degradation", "protein adsorption"],
+      "commonTopics": ["Material properties", "Biocompatibility testing", "Tissue-material interactions", "Degradation mechanisms", "Regulatory considerations"],
+      "textbooks": ["Ratner - Biomaterials Science", "Park & Lakes - Biomaterials"],
+      "tools": ["MATLAB", "Python", "Lab equipment"],
+      "typicalAssignments": ["Material selection papers", "Biocompatibility analysis", "Design problems", "Case studies"]
+    },
+    "BME3404C": {
+      "name": "Human Physiology for Engineers II",
+      "subject": "Bioengineering",
+      "credits": 3,
+      "upcoming": true,
+      "term": "Fall 2025",
+      "category": "Sciences",
+      "keywords": ["physiology", "organ system", "cardiovascular", "respiratory", "nervous", "endocrine", "homeostasis", "physiological modeling"],
+      "commonTopics": ["Cardiovascular physiology", "Respiratory system", "Nervous system", "Endocrine regulation", "Renal function"],
+      "textbooks": ["Guyton & Hall - Medical Physiology", "Silverthorn - Human Physiology"],
+      "tools": ["MATLAB", "Python (physiological modeling)", "LabVIEW"],
+      "typicalAssignments": ["Physiological modeling", "Case studies", "System analysis", "Lab reports"]
+    },
+    "BME3506C": {
+      "name": "Circuits for Bioengineers",
+      "subject": "Bioengineering",
+      "credits": 3,
+      "upcoming": true,
+      "term": "Fall 2025",
+      "category": "Math & Coding",
+      "keywords": ["circuit", "rms", "average", "ac", "dc", "op-amp", "transistor", "signal", "filter", "fourier"],
+      "commonTopics": ["AC/DC circuit analysis", "Operational amplifiers", "Filters and frequency response", "Signal processing basics", "Bioelectric signals"],
+      "textbooks": ["Nilsson & Riedel - Electric Circuits", "Hallowell - Circuit Analysis for Bioengineers"],
+      "tools": ["MATLAB", "LTSpice", "Python (circuit simulation)", "Multisim"],
+      "typicalAssignments": ["Circuit analysis problems", "Op-amp design", "Signal processing", "Lab projects"]
+    },
+    "BME4722": {
+      "name": "Health Care Engineering",
+      "subject": "Bioengineering",
+      "credits": 3,
+      "upcoming": true,
+      "term": "Fall 2025",
+      "category": "Personal Projects",
+      "keywords": ["healthcare", "medical device", "regulatory", "fda", "clinical", "biomedical device", "patient safety", "quality"],
+      "commonTopics": ["Medical device regulation", "Healthcare systems", "Clinical engineering", "Patient safety", "Quality systems"],
+      "textbooks": ["Enderle & Bronzino - Introduction to Biomedical Engineering", "Baura - Medical Device Technologies"],
+      "tools": ["Project management tools", "Regulatory databases", "Case study analysis"],
+      "typicalAssignments": ["Case studies", "Regulatory analysis", "Device evaluation", "Group projects"]
+    },
+    "EGM3420C": {
+      "name": "Engineering Mechanics",
+      "subject": "Engineering",
+      "credits": 4,
+      "upcoming": true,
+      "term": "Spring 2025",
+      "category": "Math & Coding",
+      "keywords": ["statics", "dynamics", "force", "moment", "equilibrium", "kinematics", "kinetics", "free body diagram"],
+      "commonTopics": ["Statics", "Dynamics", "Force systems", "Equilibrium", "Motion analysis"],
+      "textbooks": ["Hibbeler - Engineering Mechanics", "Beer & Johnston - Vector Mechanics"],
+      "tools": ["MATLAB", "SolidWorks", "Python"],
+      "typicalAssignments": ["Free body diagrams", "Equilibrium problems", "Motion analysis", "Design problems"]
+    },
+    "MAC2313": {
+      "name": "Calculus III",
+      "subject": "Mathematics",
+      "credits": 4,
+      "upcoming": true,
+      "term": "Spring 2026",
+      "category": "Math & Coding",
+      "keywords": ["multivariable", "partial derivative", "gradient", "divergence", "curl", "line integral", "surface integral", "vector field"],
+      "commonTopics": ["Multivariable calculus", "Partial derivatives", "Multiple integrals", "Vector calculus", "Line and surface integrals"],
+      "textbooks": ["Stewart - Multivariable Calculus", "Larson & Edwards - Calculus"],
+      "tools": ["MATLAB", "Python (sympy, matplotlib)", "Wolfram Alpha"],
+      "typicalAssignments": ["Partial derivative problems", "Multiple integrals", "Vector calculus", "Applications"]
+    },
+    "BME4332C": {
+      "name": "Cellular & Tissue Engineering",
+      "subject": "Bioengineering",
+      "credits": 3,
+      "upcoming": true,
+      "term": "Spring 2026",
+      "category": "Sciences",
+      "keywords": ["tissue engineering", "cell culture", "scaffold", "stem cell", "regenerative medicine", "biomaterial scaffold"],
+      "commonTopics": ["Cell culture techniques", "Scaffold design", "Tissue engineering principles", "Stem cell applications"],
+      "textbooks": ["Lanza & Langer - Principles of Tissue Engineering", "Palsson & Bhatia - Tissue Engineering"],
+      "tools": ["Cell culture equipment", "MATLAB", "Image analysis tools"],
+      "typicalAssignments": ["Lab protocols", "Scaffold design projects", "Literature reviews", "Lab reports"]
+    }
+  },
+  "selfStudy": {
+    "Chemistry": {
+      "topics": ["Organic Chemistry II", "Physical Chemistry", "Biochemistry", "Analytical Chemistry"],
+      "category": "Sciences"
+    },
+    "ComputerScience": {
+      "topics": ["Data Structures", "Algorithms", "Systems Programming", "Machine Learning", "Web Development"],
+      "category": "Math & Coding"
+    },
+    "Bioengineering": {
+      "topics": ["Advanced Biomaterials", "Biomechanics", "Medical Imaging", "Neural Engineering"],
+      "category": "Sciences"
+    }
+  }
+}
+

@@ -1,0 +1,21 @@
+# CODEOWNERS file for automatic reviewer assignment
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything
+* @jonnyterrero
+
+# Critical infrastructure files
+/.github/workflows/ @jonnyterrero
+/.github/CODEOWNERS @jonnyterrero
+/scripts/ @jonnyterrero
+
+# Configuration files
+package.json @jonnyterrero
+tsconfig*.json @jonnyterrero
+*.toml @jonnyterrero
+requirements.txt @jonnyterrero
+
+# Documentation
+/docs/ @jonnyterrero
+README.md @jonnyterrero
+CONTRIBUTING.md @jonnyterrero

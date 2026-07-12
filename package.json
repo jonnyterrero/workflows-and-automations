@@ -1,0 +1,20 @@
+{
+  "name": "jonnyjr",
+  "private": true,
+  "workspaces": [
+    "packages/ts",
+    "packages/py"
+  ],
+  "scripts": {
+    "build": "npm -w @jonnyjr/ts run build",
+    "typecheck": "npm -w @jonnyjr/ts run typecheck",
+    "lint": "npm -w @jonnyjr/ts run lint && echo \"(Python lint via Ruff/Black runs from Py project)\"",
+    "test": "npm -w @jonnyjr/ts run test && echo \"Run: pytest -q in packages/py\"",
+    "format": "npm -w @jonnyjr/ts run format",
+    "lint:md": "markdownlint '**/*.md' --ignore node_modules --ignore dist",
+    "lint:md:fix": "markdownlint '**/*.md' --ignore node_modules --ignore dist --fix"
+  },
+  "devDependencies": {
+    "markdownlint-cli": "^0.39.0"
+  }
+}

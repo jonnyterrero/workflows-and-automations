@@ -1,0 +1,55 @@
+name: Auto Labeler
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Auto Label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const context = ${{ toJSON(github) }};
+            const { owner, repo, number } = context.issue || context.pull_request;
+            
+            // Get changed files
+            const files = context.event.pull_request?.files?.map(f => f.filename) || [];
+            
+            // Define label mappings
+            const labelMappings = {
+              'type:reminder': ['docs/**', '.github/ISSUE_TEMPLATE/**'],
+              'type:research': ['docs/briefs/**', 'docs/plans/**'],
+              'area:typescript': ['packages/ts/**'],
+              'area:python': ['packages/py/**'],
+              'area:matlab': ['school/MATLAB/**']
+            };
+            
+            // Determine labels based on file paths
+            const labelsToAdd = [];
+            
+            for (const [label, patterns] of Object.entries(labelMappings)) {
+              for (const pattern of patterns) {
+                const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
+                if (files.some(file => regex.test(file))) {
+                  labelsToAdd.push(label);
+                  break;
+                }
+              }
+            }
+            
+            // Add labels if any match
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: number,
+                labels: labelsToAdd
+              });
+              console.log(`Added labels: ${labelsToAdd.join(', ')}`);
+            }

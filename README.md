@@ -3,7 +3,7 @@
 Personal automation hub for Claude Code, MCP integrations, plugins, research tooling, and the **Obsidian Second Brain** — a system that lets Claude use your Obsidian vault as persistent memory across sessions.
 
 **Repo:** [jonnyterrero/workflows-and-automations](https://github.com/jonnyterrero/workflows-and-automations)  
-**Nested AI helper:** [`JonnyJr/`](./JonnyJr) → [jonnyterrero/JonnyJr](https://github.com/jonnyterrero/JonnyJr)
+**Nested AI helper:** [`JonnyJr/`](./JonnyJr) (in-tree; standalone repo retired)
 
 ---
 
@@ -36,7 +36,7 @@ Personal automation hub for Claude Code, MCP integrations, plugins, research too
 
 ## JonnyJr (nested)
 
-[`JonnyJr/`](./JonnyJr) is nested here via git subtree from [jonnyterrero/JonnyJr](https://github.com/jonnyterrero/JonnyJr). It is the AI research helper: daily/nightly research workflows, synthesis scripts, and auto-PR reporting.
+[`JonnyJr/`](./JonnyJr) lives in this repo as the AI research helper: daily/nightly research workflows, synthesis scripts, and auto-PR reporting. The standalone `jonnyterrero/JonnyJr` repo has been deleted.
 
 ```bash
 # From JonnyJr/
@@ -46,14 +46,6 @@ npm run research      # run research
 npm run synthesize    # synthesize findings
 npm run open-pr       # open review PR
 npm test
-```
-
-Upstream sync (when JonnyJr remote history changes):
-
-```bash
-git remote add jonnyjr https://github.com/jonnyterrero/JonnyJr.git   # once
-git fetch jonnyjr main
-git subtree pull --prefix=JonnyJr jonnyjr main --squash
 ```
 
 ---
@@ -199,7 +191,7 @@ Claude will never read without explicit instruction:
 ├── README.md                          # This file
 ├── CLAUDE.md                          # Project-level Claude Code config
 ├── .mcp.json                          # MCP server configuration
-├── JonnyJr/                           # AI research helper (subtree → jonnyterrero/JonnyJr)
+├── JonnyJr/                           # AI research helper (in-tree)
 ├── Engineering-Projects/              # Engineering + app dev tech stacks (subtree)
 ├── 7-automations/                     # Make.com and Second Brain automations
 ├── agent-trio/                        # Multi-agent setups
@@ -211,7 +203,6 @@ Claude will never read without explicit instruction:
 
 ## Related
 
-- [JonnyJr](https://github.com/jonnyterrero/JonnyJr) — standalone AI research repository
 - [Obsidian Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)
 - [Claude Code docs](https://docs.anthropic.com/claude-code)
 - [Model Context Protocol](https://modelcontextprotocol.io)

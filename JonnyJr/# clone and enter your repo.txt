@@ -1,0 +1,11 @@
+# clone and enter your repo
+git clone https://github.com/your-username/JonnyJr.git
+cd JonnyJr
+
+# folders
+mkdir -p .github/workflows .github/ISSUE_TEMPLATE .cursor/rules docs/briefs docs/plans \
+         packages/ts/src packages/ts/tests packages/py/src packages/py/tests \
+         school/MATLAB/templates school/MAP2302/HW1
+
+# optional: initialize npm workspaces (we’ll add package.json below)
+npm init -y

@@ -1,0 +1,95 @@
+name: Set Reminder
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      what:
+        description: "What to remind about"
+        required: true
+      when:
+        description: "When? (ISO 8601: 2025-10-28T14:00:00-04:00)"
+        required: true
+      category:
+        description: "Category"
+        required: true
+        default: "Reflections & Questions"
+        type: choice
+        options:
+          - "Personal Projects"
+          - "Reflections & Questions"
+          - "Math & Coding"
+          - "Sciences"
+
+jobs:
+  create_reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Generate iCalendar (.ics) file
+        run: |
+          START_UTC=$(date -u -d "${{ github.event.inputs.when }}" +%Y%m%dT%H%M%SZ 2>/dev/null || true)
+          if [ -z "$START_UTC" ]; then
+            echo "Invalid date; skipping ICS generation"; exit 0; fi
+          END_UTC=$(date -u -d "${{ github.event.inputs.when }} +30 minutes" +%Y%m%dT%H%M%SZ)
+          UID=$(uuidgen || echo $RANDOM)
+          SUMMARY="Reminder: ${{ github.event.inputs.what }}"
+          DESCRIPTION="Created by GitHub Actions in ${GITHUB_REPOSITORY}"
+          FILE=reminder.ics
+          {
+            echo "BEGIN:VCALENDAR"
+            echo "VERSION:2.0"
+            echo "PRODID:-//JonnyJr//Reminder//EN"
+            echo "CALSCALE:GREGORIAN"
+            echo "BEGIN:VEVENT"
+            echo "UID:$UID"
+            echo "DTSTAMP:$START_UTC"
+            echo "DTSTART:$START_UTC"
+            echo "DTEND:$END_UTC"
+            echo "SUMMARY:$SUMMARY"
+            echo "DESCRIPTION:$DESCRIPTION"
+            echo "END:VEVENT"
+            echo "END:VCALENDAR"
+          } > "$FILE"
+      - name: Read ICS content
+        id: ics
+        shell: bash
+        run: |
+          if [ -f reminder.ics ]; then
+            echo 'content<<ICS' >> $GITHUB_OUTPUT
+            cat reminder.ics >> $GITHUB_OUTPUT
+            echo 'ICS' >> $GITHUB_OUTPUT
+          fi
+      - name: Ensure label exists (type:reminder)
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          # Create label if it doesn't exist
+          gh label create "type:reminder" \
+            --color FF9800 \
+            --description "Reminder-related issues" \
+            || echo "Label already exists or could not be created"
+      - name: Ensure category label exists
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          CATEGORY="${{ github.event.inputs.category }}"
+          COLOR="6A5ACD" # slateblue
+          DESC="Workflow category label"
+          gh label create "$CATEGORY" --color "$COLOR" --description "$DESC" \
+            || echo "Category label '$CATEGORY' already exists or could not be created"
+      - name: Create Reminder Issue
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          # Create the reminder issue
+          gh issue create \
+            --title "[Reminder] ${{ github.event.inputs.what }} — ${{ github.event.inputs.when }}" \
+            --body "**What:** ${{ github.event.inputs.what }}\n**When:** ${{ github.event.inputs.when }}\n**Category:** ${{ github.event.inputs.category }}\n**Auto-cron:** \`$(date -d '${{ github.event.inputs.when }}' '+%M %H * * *' 2>/dev/null || echo 'Invalid date format')\`\n\n---\n\nIf your calendar supports iCalendar, copy the text below into a file named \`reminder.ics\` and import it:\n\n\n\`\`\`ics\n${{ steps.ics.outputs.content }}\n\`\`\`\n\n*This reminder was created automatically via GitHub Actions.*" \
+            --label "type:reminder,${{ github.event.inputs.category }}"

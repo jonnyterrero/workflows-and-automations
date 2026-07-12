@@ -1,0 +1,133 @@
+name: Personal Project Help
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Project or feature topic"
+        required: true
+      category:
+        description: "Category"
+        required: true
+        default: "Personal Projects"
+        type: choice
+        options:
+          - "Personal Projects"
+          - "Reflections & Questions"
+          - "Math & Coding"
+          - "Sciences"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  project_help:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install deps
+        run: npm ci || npm i
+      - name: Configure git to use ACTIONS_PAT
+        env:
+          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          if [ -z "$ACTIONS_PAT" ]; then
+            echo "ACTIONS_PAT is not set; failing" >&2
+            exit 1
+          fi
+          git config --global --unset-all http.https://github.com/.extraheader || true
+          git config --local --unset-all http.https://github.com/.extraheader || true
+          git config --global user.name "${GITHUB_ACTOR}"
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+      - name: Research
+        env:
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+        run: |
+          npx ts-node scripts/research.ts "${{ github.event.inputs.topic }}" > RESEARCH.md
+      - name: Synthesize plan
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          npx ts-node scripts/synthesize.ts RESEARCH.md > SYNTHESIS.md
+      - name: Upload outputs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-help-outputs
+          path: |
+            RESEARCH.md
+            SYNTHESIS.md
+      - name: Create/Update workflow branch and commit
+        run: |
+          # Use consistent branch name for this workflow
+          BRANCH_NAME="workflow/project-assistant"
+          echo "📦 Using branch: $BRANCH_NAME"
+          
+          # Fetch all branches
+          git fetch origin || true
+          
+          # Remove local branch if it exists (clean slate)
+          git branch -D "$BRANCH_NAME" 2>/dev/null || true
+          
+          # Checkout existing remote branch or create new one
+          if git show-ref --verify --quiet refs/remotes/origin/"$BRANCH_NAME"; then
+            echo "✅ Branch exists remotely, checking out..."
+            git checkout -b "$BRANCH_NAME" "origin/$BRANCH_NAME" || git checkout "$BRANCH_NAME"
+          else
+            echo "🆕 Creating new branch from main..."
+            git checkout -b "$BRANCH_NAME" main || git checkout -b "$BRANCH_NAME"
+          fi
+          
+          git add RESEARCH.md SYNTHESIS.md
+          git -c user.name='ci' -c user.email='ci@users.noreply.github.com' commit -m "Project: ${{ github.event.inputs.topic }}" || {
+            echo "ℹ️  No changes to commit (files may be unchanged)"
+          }
+          
+          # Ensure PAT-based origin using actor:token
+          git remote remove origin || true
+          git remote add origin https://${GITHUB_ACTOR}:${{ secrets.ACTIONS_PAT }}@github.com/${{ github.repository }}.git
+          git ls-remote --heads origin >/dev/null 2>&1 || true
+          
+          # Push to update the branch
+          git push --force-with-lease origin "$BRANCH_NAME" || git push --force origin "$BRANCH_NAME"
+          echo "✅ Updated branch: $BRANCH_NAME"
+          
+          # Store branch name for PR creation
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+      - name: Create or Update PR
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_PAT }}
+        run: |
+          echo "🔍 Checking for existing PR on branch: $BRANCH_NAME"
+          
+          # Check if PR already exists for this branch
+          EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --base main --json number --jq '.[0].number' 2>/dev/null || echo "")
+          
+          if [ -n "$EXISTING_PR" ]; then
+            echo "✅ PR #$EXISTING_PR already exists, updating..."
+            gh pr edit "$EXISTING_PR" \
+              --title "Project Help: ${{ github.event.inputs.topic }}" \
+              --body-file SYNTHESIS.md \
+              --add-label "${{ github.event.inputs.category }}" 2>/dev/null || true
+            echo "✅ PR #$EXISTING_PR updated"
+          else
+            echo "🆕 Creating new PR..."
+            if gh pr create \
+              --title "Project Help: ${{ github.event.inputs.topic }}" \
+              --body-file SYNTHESIS.md \
+              --base main \
+              --head "$BRANCH_NAME" \
+              --label "${{ github.event.inputs.category }}" 2>/dev/null; then
+              echo "✅ PR created successfully"
+            else
+              echo "⚠️  Could not create PR automatically. Please create manually:"
+              echo "   Branch: $BRANCH_NAME"
+              echo "   URL: https://github.com/${{ github.repository }}/compare/main...$BRANCH_NAME"
+            fi
+          fi

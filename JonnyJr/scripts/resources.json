@@ -1,0 +1,357 @@
+{
+  "resources": {
+    "mathematics": {
+      "general": [
+        {
+          "title": "Khan Academy - Calculus",
+          "url": "https://www.khanacademy.org/math/calculus-1",
+          "description": "Comprehensive calculus tutorials and practice problems"
+        },
+        {
+          "title": "Khan Academy - Differential Equations",
+          "url": "https://www.khanacademy.org/math/differential-equations",
+          "description": "ODE and PDE tutorials with step-by-step solutions"
+        },
+        {
+          "title": "Paul's Online Math Notes",
+          "url": "https://tutorial.math.lamar.edu/",
+          "description": "Free math notes and tutorials for calculus, differential equations, and more"
+        },
+        {
+          "title": "Wolfram MathWorld",
+          "url": "https://mathworld.wolfram.com/",
+          "description": "Comprehensive mathematical encyclopedia"
+        },
+        {
+          "title": "MIT OpenCourseWare - Differential Equations",
+          "url": "https://ocw.mit.edu/courses/18-03-differential-equations-spring-2010/",
+          "description": "MIT course materials including lecture notes and problem sets"
+        }
+      ],
+      "laplace": [
+        {
+          "title": "Laplace Transform - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Laplace_transform",
+          "description": "Comprehensive reference on Laplace transforms"
+        },
+        {
+          "title": "Khan Academy - Laplace Transform",
+          "url": "https://www.khanacademy.org/math/differential-equations/laplace-transform",
+          "description": "Laplace transform tutorials and examples"
+        }
+      ],
+      "integration": [
+        {
+          "title": "Khan Academy - Integration",
+          "url": "https://www.khanacademy.org/math/calculus-1/integration-calc1",
+          "description": "Integration techniques and practice"
+        },
+        {
+          "title": "Integral Calculator",
+          "url": "https://www.integral-calculator.com/",
+          "description": "Symbolic integration tool for verification"
+        }
+      ],
+      "rms": [
+        {
+          "title": "Root Mean Square - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Root_mean_square",
+          "description": "RMS definition, formulas, and applications"
+        },
+        {
+          "title": "All About Circuits - RMS Values",
+          "url": "https://www.allaboutcircuits.com/textbook/alternating-current/chpt-2/rms-rectified-average-values/",
+          "description": "RMS and average values for AC circuits with examples"
+        }
+      ]
+    },
+    "physics": {
+      "general": [
+        {
+          "title": "Khan Academy - Physics",
+          "url": "https://www.khanacademy.org/science/physics",
+          "description": "Complete physics course from mechanics to electromagnetism"
+        },
+        {
+          "title": "HyperPhysics",
+          "url": "http://hyperphysics.phy-astr.gsu.edu/hbase/hph.html",
+          "description": "Concept map of physics concepts with interactive examples"
+        },
+        {
+          "title": "MIT OpenCourseWare - Physics",
+          "url": "https://ocw.mit.edu/courses/physics/",
+          "description": "MIT physics courses and materials"
+        }
+      ],
+      "circuits": [
+        {
+          "title": "All About Circuits",
+          "url": "https://www.allaboutcircuits.com/",
+          "description": "Comprehensive electronics and circuit analysis resources"
+        },
+        {
+          "title": "Circuit Analysis - Khan Academy",
+          "url": "https://www.khanacademy.org/science/electrical-engineering/ee-circuit-analysis-topic",
+          "description": "Circuit analysis tutorials and problems"
+        },
+        {
+          "title": "Falstad Circuit Simulator",
+          "url": "https://www.falstad.com/circuit/",
+          "description": "Interactive circuit simulator for visualization"
+        }
+      ],
+      "electromagnetism": [
+        {
+          "title": "Khan Academy - Electricity and Magnetism",
+          "url": "https://www.khanacademy.org/science/physics/electric-charge-electric-force-and-voltage",
+          "description": "E&M concepts with visualizations"
+        }
+      ]
+    },
+    "bioengineering": {
+      "general": [
+        {
+          "title": "MIT OpenCourseWare - Bioengineering",
+          "url": "https://ocw.mit.edu/courses/biological-engineering/",
+          "description": "MIT bioengineering course materials"
+        },
+        {
+          "title": "Nature - Biomedical Engineering",
+          "url": "https://www.nature.com/subjects/biomedical-engineering",
+          "description": "Latest research in biomedical engineering"
+        }
+      ],
+      "biomaterials": [
+        {
+          "title": "Biomaterials Science - Textbook Resources",
+          "url": "https://www.sciencedirect.com/book/9780128161371/biomaterials-science",
+          "description": "Ratner's Biomaterials Science reference"
+        },
+        {
+          "title": "PubMed - Biomaterials",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/?term=biomaterials",
+          "description": "Biomaterials research database"
+        }
+      ],
+      "physiology": [
+        {
+          "title": "Khan Academy - Human Body Systems",
+          "url": "https://www.khanacademy.org/science/biology/human-biology",
+          "description": "Human physiology and anatomy tutorials"
+        },
+        {
+          "title": "Interactive Physiology",
+          "url": "https://www.pearsonhighered.com/assets/samplechapter/0/1/3/4/0134158384.pdf",
+          "description": "Interactive physiology resources"
+        }
+      ],
+      "circuits": [
+        {
+          "title": "Circuits for Bioengineers - All About Circuits",
+          "url": "https://www.allaboutcircuits.com/textbook/direct-current/",
+          "description": "DC and AC circuit analysis for engineering applications"
+        }
+      ],
+      "medicalDevices": [
+        {
+          "title": "FDA - Medical Devices",
+          "url": "https://www.fda.gov/medical-devices",
+          "description": "FDA regulatory information for medical devices"
+        },
+        {
+          "title": "ISO 13485 - Medical Devices",
+          "url": "https://www.iso.org/standard/59752.html",
+          "description": "Quality management for medical devices"
+        }
+      ]
+    },
+    "chemistry": {
+      "general": [
+        {
+          "title": "Khan Academy - Chemistry",
+          "url": "https://www.khanacademy.org/science/chemistry",
+          "description": "Complete chemistry course from basics to advanced topics"
+        },
+        {
+          "title": "MIT OpenCourseWare - Chemistry",
+          "url": "https://ocw.mit.edu/courses/chemistry/",
+          "description": "MIT chemistry courses and materials"
+        }
+      ],
+      "organic": [
+        {
+          "title": "Master Organic Chemistry",
+          "url": "https://www.masterorganicchemistry.com/",
+          "description": "Organic chemistry study guides and tutorials"
+        },
+        {
+          "title": "Organic Chemistry Portal",
+          "url": "https://www.organic-chemistry.org/",
+          "description": "Reaction mechanisms and synthesis resources"
+        }
+      ],
+      "physical": [
+        {
+          "title": "Physical Chemistry - Khan Academy",
+          "url": "https://www.khanacademy.org/science/physics/thermodynamics",
+          "description": "Thermodynamics and physical chemistry concepts"
+        }
+      ]
+    },
+    "computerScience": {
+      "general": [
+        {
+          "title": "Khan Academy - Computer Science",
+          "url": "https://www.khanacademy.org/computing/computer-science",
+          "description": "Computer science fundamentals and programming"
+        },
+        {
+          "title": "MIT OpenCourseWare - Computer Science",
+          "url": "https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/",
+          "description": "MIT CS courses including algorithms and data structures"
+        }
+      ],
+      "algorithms": [
+        {
+          "title": "Visualgo",
+          "url": "https://visualgo.net/",
+          "description": "Visualization of data structures and algorithms"
+        },
+        {
+          "title": "LeetCode",
+          "url": "https://leetcode.com/",
+          "description": "Algorithm practice problems"
+        }
+      ],
+      "machineLearning": [
+        {
+          "title": "Fast.ai",
+          "url": "https://www.fast.ai/",
+          "description": "Practical deep learning course"
+        },
+        {
+          "title": "Kaggle Learn",
+          "url": "https://www.kaggle.com/learn",
+          "description": "Machine learning and data science courses"
+        }
+      ]
+    },
+    "programming": {
+      "matlab": [
+        {
+          "title": "MATLAB Documentation",
+          "url": "https://www.mathworks.com/help/matlab/",
+          "description": "Official MATLAB documentation and examples"
+        },
+        {
+          "title": "MATLAB Central",
+          "url": "https://www.mathworks.com/matlabcentral/",
+          "description": "MATLAB file exchange and community"
+        },
+        {
+          "title": "MATLAB Academy",
+          "url": "https://matlabacademy.mathworks.com/",
+          "description": "Free MATLAB courses and tutorials"
+        }
+      ],
+      "python": [
+        {
+          "title": "Python.org Documentation",
+          "url": "https://docs.python.org/3/",
+          "description": "Official Python documentation"
+        },
+        {
+          "title": "NumPy Documentation",
+          "url": "https://numpy.org/doc/stable/",
+          "description": "NumPy scientific computing library"
+        },
+        {
+          "title": "SciPy Documentation",
+          "url": "https://docs.scipy.org/doc/scipy/",
+          "description": "SciPy scientific computing library"
+        },
+        {
+          "title": "Matplotlib Documentation",
+          "url": "https://matplotlib.org/stable/contents.html",
+          "description": "Python plotting library documentation"
+        }
+      ],
+      "typescript": [
+        {
+          "title": "TypeScript Handbook",
+          "url": "https://www.typescriptlang.org/docs/handbook/intro.html",
+          "description": "Official TypeScript documentation"
+        }
+      ]
+    },
+    "tools": {
+      "calculators": [
+        {
+          "title": "Wolfram Alpha",
+          "url": "https://www.wolframalpha.com/",
+          "description": "Computational knowledge engine for math, physics, chemistry"
+        },
+        {
+          "title": "Symbolab",
+          "url": "https://www.symbolab.com/",
+          "description": "Step-by-step calculator for algebra, calculus, and more"
+        },
+        {
+          "title": "Desmos Graphing Calculator",
+          "url": "https://www.desmos.com/calculator",
+          "description": "Online graphing calculator"
+        }
+      ],
+      "reference": [
+        {
+          "title": "Wikipedia",
+          "url": "https://www.wikipedia.org/",
+          "description": "General reference for all subjects"
+        },
+        {
+          "title": "Google Scholar",
+          "url": "https://scholar.google.com/",
+          "description": "Academic paper search and citations"
+        },
+        {
+          "title": "arXiv",
+          "url": "https://arxiv.org/",
+          "description": "Preprint repository for physics, math, CS, and more"
+        }
+      ]
+    },
+    "art": {
+      "inspiration": [
+        {
+          "title": "Pinterest",
+          "url": "https://www.pinterest.com/",
+          "description": "Visual inspiration and art references"
+        },
+        {
+          "title": "Behance",
+          "url": "https://www.behance.net/",
+          "description": "Creative portfolio showcase"
+        },
+        {
+          "title": "Google Images",
+          "url": "https://www.google.com/imghp",
+          "description": "Image search for references"
+        },
+        {
+          "title": "Adobe Color",
+          "url": "https://color.adobe.com/create/color-wheel",
+          "description": "Color palette generator and harmony tools"
+        }
+      ]
+    }
+  },
+  "courseMappings": {
+    "MAP2302": ["mathematics.general", "mathematics.laplace", "mathematics.integration", "programming.matlab"],
+    "PHY2049": ["physics.general", "physics.circuits", "physics.electromagnetism", "mathematics.rms"],
+    "BME3100C": ["bioengineering.biomaterials", "chemistry.general"],
+    "BME3404C": ["bioengineering.physiology"],
+    "BME3506C": ["physics.circuits", "bioengineering.circuits", "programming.matlab", "mathematics.rms"],
+    "BME4722": ["bioengineering.medicalDevices", "bioengineering.general"]
+  }
+}
+

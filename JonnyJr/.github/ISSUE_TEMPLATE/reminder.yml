@@ -1,0 +1,15 @@
+name: Reminder
+description: Create a scheduled reminder
+labels: ["type:reminder"]
+body:
+  - type: input
+    id: what
+    attributes: { label: What to remind, placeholder: "Submit lab report" }
+    validations: { required: true }
+  - type: input
+    id: when
+    attributes: { label: When (ISO 8601), placeholder: "2025-10-28T14:00:00-04:00" }
+    validations: { required: true }
+  - type: textarea
+    id: notes
+    attributes: { label: Notes }

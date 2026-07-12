@@ -1,0 +1,76 @@
+name: Coverage
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/ts/**"
+      - "packages/py/**"
+      - "scripts/update_coverage_badge.mjs"
+      - ".github/workflows/coverage.yml"
+  pull_request:
+    paths:
+      - "packages/ts/**"
+      - "packages/py/**"
+
+permissions:
+  contents: write
+
+jobs:
+  cobertura:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---- TS coverage ----
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Install Node deps
+        run: npm i -w @jonnyjr/ts || npm i
+      - name: Run TS tests with coverage
+        run: npm -w @jonnyjr/ts run test
+
+      # ---- Python coverage ----
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r packages/py/requirements.txt
+      - name: Run Py tests with coverage
+        working-directory: packages/py
+        run: pytest
+
+      # ---- Combine & publish ----
+      - name: Update README badge (combined TS+Py)
+        run: node scripts/update_coverage_badge.mjs
+
+      - name: Save coverage under docs/coverage
+        run: |
+          mkdir -p docs/coverage/ts docs/coverage/python
+          # TS: copy html/json
+          if [ -d packages/ts/coverage ]; then
+            cp -r packages/ts/coverage/* docs/coverage/ts/ || true
+          fi
+          # Python: copy html and xml
+          if [ -d packages/py/coverage_html ]; then
+            cp -r packages/py/coverage_html/* docs/coverage/python/ || true
+          fi
+          if [ -f packages/py/coverage.xml ]; then
+            cp packages/py/coverage.xml docs/coverage/python/ || true
+          fi
+
+      - name: Commit coverage & README (if changed)
+        run: |
+          git config user.name "ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add docs/coverage README.md || true
+          git diff --cached --quiet || git commit -m "ci: update combined coverage and badge"
+          git push || true
+
+      - name: Upload artifact (PR view)
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-coverage
+          path: docs/coverage

@@ -22,6 +22,25 @@ Requirements:
 - Python 3.12+
 - An OpenAI API key for live agent runs
 - No API key is required for the deterministic offline demonstration
+- GitHub CLI is optional but recommended for branch, pull-request, and repository verification workflows
+
+### Windows GitHub CLI setup
+
+Install GitHub CLI from PowerShell or Windows Terminal:
+
+```powershell
+winget install --id GitHub.cli
+```
+
+Open a new terminal after installation, then authenticate and verify the connection:
+
+```powershell
+gh --version
+gh auth login
+gh auth status
+```
+
+Choose `GitHub.com`, select HTTPS, and complete browser authentication when prompted.
 
 From the repository root:
 

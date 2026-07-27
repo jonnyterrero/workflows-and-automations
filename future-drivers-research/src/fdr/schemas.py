@@ -6,7 +6,7 @@ by ``fdr.scoring`` (deterministic code), never by an agent asserting a number.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from typing import Any
 
@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 def _utcnow() -> datetime:
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 class AssetClass(str, Enum):
@@ -82,7 +82,7 @@ class Evidence(BaseModel):
             return None
         published = self.published_at
         if published.tzinfo is None:
-            published = published.replace(tzinfo=timezone.utc)
+            published = published.replace(tzinfo=UTC)
         return (_utcnow() - published).total_seconds() / 86400.0
 
 

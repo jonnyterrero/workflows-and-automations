@@ -1,0 +1,25 @@
+# Shared execution environment for all four agents.
+# Applied with: ant beta:environments create < agents/research.environment.yaml
+#
+# Networking is deliberately restricted. The agents reach external data two
+# ways, neither of which needs open container egress:
+#
+#   * web_search / web_fetch are server-side tools — they execute on
+#     Anthropic's infrastructure, not inside this container.
+#   * SEC, FRED, and market data arrive through custom tools, which execute in
+#     the orchestrator process where the credentials live.
+#
+# So the container only needs package managers, for the Evidence and Risk
+# analysts to run their own calculations in bash. Leaving egress unrestricted
+# would add attack surface for no capability.
+name: fdr-research
+description: >-
+  Sandbox for the future-drivers investment research agents. Restricted egress;
+  external data arrives via host-executed custom tools.
+
+config:
+  type: cloud
+  networking:
+    type: limited
+    allow_package_managers: true
+    allow_mcp_servers: false

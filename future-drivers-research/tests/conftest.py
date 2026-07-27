@@ -25,8 +25,27 @@ from fdr.schemas import (  # noqa: E402
 )
 
 
+# Captured before the autouse fixture stubs it out, so the tests that exercise
+# .env parsing itself can still reach the real implementation.
+_REAL_LOAD_DOTENV = config.load_dotenv
+
+
+@pytest.fixture
+def real_load_dotenv():
+    return _REAL_LOAD_DOTENV
+
+
 @pytest.fixture(autouse=True)
 def isolated_data_dir(tmp_path, monkeypatch):
+    """Isolate every test from the developer's real configuration.
+
+    ``load_dotenv`` is stubbed out because a populated .env would otherwise
+    hand tests live credentials and agent IDs — which once made a precondition
+    test open a real session and hang instead of failing fast.
+    """
+    monkeypatch.setattr(config, "load_dotenv", lambda *a, **k: None)
+    for leaked in ("ANTHROPIC_API_KEY", "FDR_COMMITTEE_AGENT_ID", "FDR_ENVIRONMENT_ID"):
+        monkeypatch.delenv(leaked, raising=False)
     monkeypatch.setenv("FDR_DEMO_MODE", "true")
     monkeypatch.setenv("FDR_DATA_DIR", str(tmp_path / "data"))
     config.get_settings(refresh=True)

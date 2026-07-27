@@ -10,9 +10,12 @@ Three client behaviours here are load-bearing and easy to get subtly wrong:
   us, including every custom tool call. Breaking on the first idle would
   abandon the run mid-research. We continue while ``stop_reason`` is
   ``requires_action`` and stop only on a terminal reason.
-* **Echo the thread id.** In a multiagent session a subagent's tool call is
-  cross-posted to the primary thread carrying ``session_thread_id``. The reply
-  must carry it back so the result is routed to the thread that is waiting.
+* **Echo the thread id, and send per thread.** In a multiagent session a
+  subagent's tool call is cross-posted to the primary thread carrying
+  ``session_thread_id``. The reply must carry it back, *and* results for
+  different threads must go in separate requests — a send is resolved against
+  one thread's pending calls, so a batch spanning two subagents fails on the
+  second thread's ids.
 """
 from __future__ import annotations
 
@@ -85,6 +88,44 @@ def _result_event(event: Any, result: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def _answer_tool_call(
+    client: Any,
+    session_id: str,
+    event: Any,
+    result: SessionResult,
+    verbose: bool,
+) -> bool:
+    """Execute one custom tool call and return its result to the right thread.
+
+    Sent as its own request. Each reply is resolved against the pending call it
+    names, so one request per call is the granularity that always holds —
+    batching only works when every id in the batch is still pending, which is
+    not guaranteed once subagents run concurrently.
+
+    A rejected reply is logged rather than raised: a single stale id should not
+    abandon a session that has already done real research.
+    """
+    name = getattr(event, "name", "")
+    payload = _tool_payload(event)
+    tool_result = registry.dispatch(name, payload)
+    result.tool_calls.append({"tool": name, "input": payload})
+
+    try:
+        client.beta.sessions.events.send(
+            session_id=session_id, events=[_result_event(event, tool_result)]
+        )
+    except Exception as exc:  # noqa: BLE001 - reported, session continues
+        result.transcript.append(f"[tool reply rejected] {name}: {exc}")
+        if verbose:
+            print(f"\n[! {name} reply rejected]", flush=True)
+        return False
+
+    if verbose:
+        marker = "!" if "error" in tool_result else "+"
+        print(f"\n[{marker} {name}]", flush=True)
+    return True
+
+
 def create_session(
     client: Any,
     agent_id: str,
@@ -129,7 +170,7 @@ def run_session(
     pending_kickoff = True
 
     for _ in range(MAX_TURNS):
-        tool_calls: list[Any] = []
+        answered = 0
         terminated = False
         stop_reason = ""
 
@@ -155,7 +196,13 @@ def run_session(
                             print(chunk, end="", flush=True)
 
                 elif etype == "agent.custom_tool_use":
-                    tool_calls.append(event)
+                    # Answer immediately, while this call is still the pending
+                    # one for its thread. Collecting calls and replying in a
+                    # batch at idle looks tidier but breaks: subagents run
+                    # asynchronously, so a backlog spans several turns, and by
+                    # the time we reply the earlier ids are no longer pending.
+                    if _answer_tool_call(client, session.id, event, result, verbose):
+                        answered += 1
 
                 elif etype == "session.thread_created":
                     if verbose:
@@ -180,19 +227,7 @@ def run_session(
             result.status = "terminated"
             break
 
-        if tool_calls:
-            events = []
-            for call in tool_calls:
-                name = getattr(call, "name", "")
-                payload = _tool_payload(call)
-                tool_result = registry.dispatch(name, payload)
-                result.tool_calls.append({"tool": name, "input": payload})
-                if verbose:
-                    marker = "!" if "error" in tool_result else "+"
-                    print(f"\n[{marker} {name}]", flush=True)
-                events.append(_result_event(call, tool_result))
-
-            client.beta.sessions.events.send(session_id=session.id, events=events)
+        if answered:
             continue
 
         # Idle with no work for us. `requires_action` means the session wants

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "trading-intelligence-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI-powered trading research and decision-support platform"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -34,8 +34,9 @@ dependencies = [
     "httpx>=0.27.0",
     # Scheduling
     "apscheduler>=3.10.0",
-    # LLM providers
+    # LLM providers and OpenAI agent orchestration
     "openai>=1.45.0",
+    "openai-agents>=0.2.0",
     "anthropic>=0.35.0",
     # Scraping
     "beautifulsoup4>=4.12.0",

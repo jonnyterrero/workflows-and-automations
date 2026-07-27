@@ -18,7 +18,7 @@ from packages.investment_agents.tools import (
     inspect_evidence_bundle,
 )
 
-DEFAULT_MODEL = os.getenv("OPENAI_AGENTS_MODEL", "gpt-5-mini")
+DEFAULT_MODEL = os.getenv("OPENAI_AGENTS_MODEL", "gpt-5.4-mini")
 
 _COMMON_RULES = """
 You are part of a long-horizon investment research system.

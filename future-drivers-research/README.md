@@ -60,14 +60,28 @@ make validate    # check agent definitions
 To run live:
 
 ```bash
-cp .env.example .env      # add ANTHROPIC_API_KEY, set FDR_DEMO_MODE=false
+cp .env.example .env      # add ANTHROPIC_API_KEY
 make provision            # creates the 4 agents + environment, prints their IDs
 # paste the printed IDs into .env
 make run SYMBOL=NVDA
 make changes SYMBOL=NVDA  # what moved since the last review
 ```
 
-`make provision-dry` prints the exact payloads without calling the API.
+`.env` is loaded automatically; real environment variables take precedence over
+it. `make provision-dry` prints the exact payloads without calling the API.
+
+Provisioning is idempotent — it reuses an existing environment and updates
+existing agents rather than duplicating them, so re-running after a failure is
+safe.
+
+Keep `FDR_DEMO_MODE=true` for a first live run. The agents and sessions are
+real; only the data tools serve fixtures. That isolates the Managed Agents
+plumbing from SEC and FRED network variability, so a failure is unambiguous.
+Set it to `false` once a run completes cleanly.
+
+**Requires API credits.** Managed Agents provisioning and sessions both consume
+them; a zero-balance account fails with a billing error that the scripts
+surface directly.
 
 ## Design constraints, and why they are in code
 

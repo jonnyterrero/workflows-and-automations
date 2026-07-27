@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from fdr import definitions  # noqa: E402
+from fdr import definitions, errors  # noqa: E402
 from fdr.config import get_settings  # noqa: E402
 
 
@@ -99,18 +99,22 @@ def main() -> int:
 
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
-    environment_id = _upsert_environment(client, args.dry_run)
+    try:
+        environment_id = _upsert_environment(client, args.dry_run)
 
-    roster: list[str] = []
-    for slug in definitions.SPECIALIST_SLUGS:
-        payload = definitions.build_agent_payload(slug)
-        agent_id, _ = _upsert_agent(client, payload, args.dry_run)
-        roster.append(agent_id)
+        roster: list[str] = []
+        for slug in definitions.SPECIALIST_SLUGS:
+            payload = definitions.build_agent_payload(slug)
+            agent_id, _ = _upsert_agent(client, payload, args.dry_run)
+            roster.append(agent_id)
 
-    committee_payload = definitions.build_agent_payload(
-        definitions.registry.COMMITTEE, roster=roster
-    )
-    committee_id, _ = _upsert_agent(client, committee_payload, args.dry_run)
+        committee_payload = definitions.build_agent_payload(
+            definitions.registry.COMMITTEE, roster=roster
+        )
+        committee_id, _ = _upsert_agent(client, committee_payload, args.dry_run)
+    except Exception as exc:  # noqa: BLE001 - reported, not swallowed
+        print(f"\nProvisioning stopped: {errors.explain(exc)}", file=sys.stderr)
+        return 1
 
     print("\nAdd these to your .env:\n")
     print(f"FDR_ENVIRONMENT_ID={environment_id}")

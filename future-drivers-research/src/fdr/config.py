@@ -13,6 +13,28 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
+def load_dotenv(path: Path | None = None, override: bool = False) -> None:
+    """Load KEY=VALUE pairs from .env into the environment.
+
+    Hand-rolled rather than pulling in python-dotenv, since the format we
+    document in .env.example is this simple. Real environment variables win by
+    default, so an explicit export can always override the file.
+    """
+    env_path = path or (PROJECT_ROOT / ".env")
+    if not env_path.exists():
+        return
+
+    for raw in env_path.read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if override or key not in os.environ:
+            os.environ[key] = value
+
+
 def _flag(name: str, default: bool = False) -> bool:
     raw = os.getenv(name)
     if raw is None:
@@ -66,5 +88,6 @@ _settings: Settings | None = None
 def get_settings(refresh: bool = False) -> Settings:
     global _settings
     if _settings is None or refresh:
+        load_dotenv()
         _settings = Settings()
     return _settings

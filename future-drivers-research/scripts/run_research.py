@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from fdr import runner  # noqa: E402
+from fdr import errors, runner  # noqa: E402
 
 SYMBOL_PROMPT = """Research {symbol} end to end.
 
@@ -63,7 +63,16 @@ def main() -> int:
         prompt = args.prompt
         title = "Ad hoc research"
 
-    result = runner.run_session(prompt, title=title, verbose=not args.quiet)
+    try:
+        result = runner.run_session(prompt, title=title, verbose=not args.quiet)
+    except RuntimeError as exc:
+        print(f"\n{exc}", file=sys.stderr)
+        return 1
+    except Exception as exc:  # noqa: BLE001 - reported, not swallowed
+        if not errors.is_explained(exc):
+            raise
+        print(f"\n{errors.explain(exc)}", file=sys.stderr)
+        return 1
 
     print(f"\n\n--- status: {result.status} ---")
     print(f"tool calls: {len(result.tool_calls)}")

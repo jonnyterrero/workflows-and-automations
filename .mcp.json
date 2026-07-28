@@ -26,6 +26,10 @@
       "env": {
         "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}"
       }
+    },
+    "fusion": {
+      "type": "http",
+      "url": "${FUSION_MCP_URL:-http://127.0.0.1:27182}"
     }
   }
 }

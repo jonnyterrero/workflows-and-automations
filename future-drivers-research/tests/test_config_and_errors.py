@@ -4,7 +4,7 @@ Both were added after hitting the failures for real during first provisioning.
 """
 from __future__ import annotations
 
-from fdr import config, errors
+from fdr import errors
 
 
 class TestDotenvLoading:

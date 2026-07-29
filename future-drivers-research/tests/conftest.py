@@ -24,7 +24,6 @@ from fdr.schemas import (  # noqa: E402
     Valuation,
 )
 
-
 # Captured before the autouse fixture stubs it out, so the tests that exercise
 # .env parsing itself can still reach the real implementation.
 _REAL_LOAD_DOTENV = config.load_dotenv

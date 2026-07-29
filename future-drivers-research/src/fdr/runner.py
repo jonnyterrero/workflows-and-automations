@@ -10,12 +10,18 @@ Three client behaviours here are load-bearing and easy to get subtly wrong:
   us, including every custom tool call. Breaking on the first idle would
   abandon the run mid-research. We continue while ``stop_reason`` is
   ``requires_action`` and stop only on a terminal reason.
-* **Echo the thread id, and send per thread.** In a multiagent session a
-  subagent's tool call is cross-posted to the primary thread carrying
-  ``session_thread_id``. The reply must carry it back, *and* results for
-  different threads must go in separate requests — a send is resolved against
-  one thread's pending calls, so a batch spanning two subagents fails on the
-  second thread's ids.
+* **Echo the thread id, and answer one call per request.** In a multiagent
+  session a subagent's tool call is cross-posted to the primary thread carrying
+  ``session_thread_id``; the reply must carry it back. Replies also cannot be
+  batched: each is resolved against the call it names, and once subagents run
+  concurrently a batch inevitably spans turns, so the later ids are no longer
+  pending and the whole request is rejected.
+* **Reconcile the backlog on every reconnect.** The stream has no replay, so a
+  call emitted between two connections is invisible to the live feed and the
+  session waits on it forever. Each iteration re-derives outstanding calls from
+  ``events.list`` before reading the stream.
+
+All four were found by running real sessions, not by reading the docs.
 """
 from __future__ import annotations
 
@@ -30,6 +36,10 @@ from fdr.tools import registry
 # Guard against a pathological loop if a session keeps requesting action we
 # cannot satisfy. Generous, because legitimate multi-agent research is chatty.
 MAX_TURNS = 60
+
+# How many times to re-reconcile when the session reports it is blocked but we
+# can see nothing to answer.
+REQUIRES_ACTION_RETRIES = 3
 
 
 @dataclass
@@ -88,12 +98,45 @@ def _result_event(event: Any, result: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def _pending_tool_calls(
+    client: Any, session_id: str, attempted: set[str]
+) -> list[Any]:
+    """Tool calls the session is still waiting on, from server state.
+
+    The stream has no replay, so a call emitted between two connections is
+    invisible to the live feed — the session simply sits idle with
+    ``requires_action`` forever. Reconciling against ``events.list`` on every
+    reconnect is what closes that gap.
+
+    Derived from the server's own record of which calls have results, rather
+    than from what this process remembers sending.
+    """
+    try:
+        events = list(client.beta.sessions.events.list(session_id=session_id))
+    except Exception:  # noqa: BLE001 - backlog reconciliation is best-effort
+        return []
+
+    answered_ids = {
+        getattr(e, "custom_tool_use_id", None)
+        for e in events
+        if "custom_tool_result" in getattr(e, "type", "")
+    }
+    return [
+        e
+        for e in events
+        if getattr(e, "type", "") == "agent.custom_tool_use"
+        and e.id not in answered_ids
+        and e.id not in attempted
+    ]
+
+
 def _answer_tool_call(
     client: Any,
     session_id: str,
     event: Any,
     result: SessionResult,
     verbose: bool,
+    attempted: set[str] | None = None,
 ) -> bool:
     """Execute one custom tool call and return its result to the right thread.
 
@@ -107,6 +150,8 @@ def _answer_tool_call(
     """
     name = getattr(event, "name", "")
     payload = _tool_payload(event)
+    if attempted is not None:
+        attempted.add(getattr(event, "id", ""))
     tool_result = registry.dispatch(name, payload)
     result.tool_calls.append({"tool": name, "input": payload})
 
@@ -168,6 +213,8 @@ def run_session(
         print(f"session {session.id}\ntrace   {result.console_url}\n")
 
     pending_kickoff = True
+    attempted: set[str] = set()
+    idle_without_work = 0
 
     for _ in range(MAX_TURNS):
         answered = 0
@@ -185,6 +232,12 @@ def run_session(
                 )
                 pending_kickoff = False
 
+            # Reconcile against server state before reading the live feed, so
+            # calls emitted while we were disconnected are not stranded.
+            for call in _pending_tool_calls(client, session.id, attempted):
+                if _answer_tool_call(client, session.id, call, result, verbose, attempted):
+                    answered += 1
+
             for event in stream:
                 etype = getattr(event, "type", "")
 
@@ -201,7 +254,11 @@ def run_session(
                     # batch at idle looks tidier but breaks: subagents run
                     # asynchronously, so a backlog spans several turns, and by
                     # the time we reply the earlier ids are no longer pending.
-                    if _answer_tool_call(client, session.id, event, result, verbose):
+                    if getattr(event, "id", None) in attempted:
+                        continue
+                    if _answer_tool_call(
+                        client, session.id, event, result, verbose, attempted
+                    ):
                         answered += 1
 
                 elif etype == "session.thread_created":
@@ -228,18 +285,23 @@ def run_session(
             break
 
         if answered:
+            idle_without_work = 0
             continue
 
-        # Idle with no work for us. `requires_action` means the session wants
-        # something we did not capture (e.g. a tool confirmation); anything
-        # else is a genuine end of turn.
-        if stop_reason and stop_reason != "requires_action":
-            result.status = stop_reason
+        # Idle with no work for us. `requires_action` means the session is
+        # blocked on something we have not supplied; the next iteration
+        # reconciles against server state, which usually surfaces it. Retry a
+        # bounded number of times before giving up, since the alternative is
+        # abandoning a session that is only a beat ahead of us.
+        if stop_reason == "requires_action":
+            idle_without_work += 1
+            if idle_without_work <= REQUIRES_ACTION_RETRIES:
+                time.sleep(2.0)
+                continue
+            result.status = "requires_action_unhandled"
             break
-        if not stop_reason:
-            result.status = "idle"
-            break
-        result.status = "requires_action_unhandled"
+
+        result.status = stop_reason or "idle"
         break
     else:
         result.status = "max_turns_exceeded"

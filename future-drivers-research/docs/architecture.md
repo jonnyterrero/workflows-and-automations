@@ -170,7 +170,44 @@ Three Managed Agents client behaviours, each of which fails quietly if missed:
   cross-posted to the primary thread carrying a thread id. The reply must carry
   it back, or the result does not reach the thread waiting on it.
 
-## 10. Deliberate exclusions
+## 10. Live-run status
+
+Provisioning is done and verified. All four agents exist on the account, the
+committee delegates to its specialists, and the custom-tool round trip works —
+the agents really do call our host-side SEC and FRED tools and receive results.
+
+Three runner bugs were found by running it rather than by reasoning about it:
+
+1. **Batched tool replies across threads** — results for two subagents sent in
+   one request failed on the second thread's ids. A reply is resolved against
+   one thread's pending calls.
+2. **Batched replies across turns** — grouping by thread was still wrong.
+   Subagents run asynchronously, so a backlog spans several of their turns and
+   the earlier ids are no longer pending by the time we answer. Fixed by
+   answering each call the moment it arrives, in its own request.
+3. **Tests read the developer's `.env`** — a regression from adding the loader.
+   A precondition test picked up live credentials and opened a real session
+   instead of failing fast. `conftest` now stubs the loader out.
+
+**Still open**, both visible in the last run (session
+`sesn_017pvyZgj9VrwyCVhUC1bZqg`, 3 of 4 tool calls answered):
+
+- **A call can still arrive stale.** One `fred_series` reply was rejected. The
+  call was emitted while no stream was open, so we never saw it live and
+  answered it too late. It no longer crashes the run — the reply is logged and
+  the session continues — but the subagent waits on a result it never gets.
+- **The loop gives up on `requires_action`.** When the session is idle awaiting
+  a call we did not capture, `run_session` exits with
+  `requires_action_unhandled` rather than recovering.
+
+Both have the same fix, and it closes the race rather than narrowing it: on
+`requires_action`, reconcile against `events.list` — find `agent.custom_tool_use`
+events with no matching `user.custom_tool_result` and answer those — instead of
+relying solely on what the live stream happened to deliver. This is the
+documented reconnect-with-history pattern applied to tool calls rather than
+just to transcript replay.
+
+## 11. Deliberate exclusions
 
 Not built, on purpose:
 

@@ -3,7 +3,7 @@
     "type": "script",
     "author": "",
     "description": {
-        "": "Generates a parametric 3 in cube driven by a cube_size user parameter."
+        "": "Generates a parametric 3 m cube driven by a cube_size user parameter."
     },
     "supportedOS": "windows|mac",
     "editEnabled": true

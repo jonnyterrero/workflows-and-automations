@@ -1,6 +1,6 @@
 """Fusion 360 script: generate a parametric solid cube.
 
-Default output is a 3 in x 3 in x 3 in cube, anchored at the origin of a new
+Default output is a 3 m x 3 m x 3 m cube, anchored at the origin of a new
 component, driven by a single user parameter named ``cube_size``.
 
 Install:
@@ -21,8 +21,10 @@ import adsk.core
 import adsk.fusion
 
 # Single source of truth for the cube edge length. Any valid Fusion expression
-# works here, e.g. '3 in', '76.2 mm', '2.5 in'.
-CUBE_SIZE_EXPRESSION = '3 in'
+# works here, e.g. '3 m', '3000 mm', '3 in'. Keep CUBE_SIZE_UNITS in step with
+# the unit used in the expression.
+CUBE_SIZE_EXPRESSION = '3 m'
+CUBE_SIZE_UNITS = 'm'
 
 PARAM_NAME = 'cube_size'
 COMPONENT_NAME = 'Cube'
@@ -39,7 +41,7 @@ def _upsert_parameter(design: adsk.fusion.Design) -> adsk.fusion.UserParameter:
     return design.userParameters.add(
         PARAM_NAME,
         adsk.core.ValueInput.createByString(CUBE_SIZE_EXPRESSION),
-        'in',
+        CUBE_SIZE_UNITS,
         'Edge length of the generated cube',
     )
 
@@ -115,13 +117,15 @@ def run(context):
         # Parametric modeling is required for user parameters and editable features.
         design.designType = adsk.fusion.DesignTypes.ParametricDesignType
         design.fusionUnitsManager.distanceDisplayUnits = (
-            adsk.fusion.DistanceUnits.InchDistanceUnits
+            adsk.fusion.DistanceUnits.MeterDistanceUnits
         )
 
         parameter = _upsert_parameter(design)
 
         # Fusion's internal length unit is centimeters; convert before creating geometry.
-        edge_cm = design.unitsManager.evaluateExpression(CUBE_SIZE_EXPRESSION, 'in')
+        edge_cm = design.unitsManager.evaluateExpression(
+            CUBE_SIZE_EXPRESSION, CUBE_SIZE_UNITS
+        )
 
         occurrence = design.rootComponent.occurrences.addNewComponent(
             adsk.core.Matrix3D.create()

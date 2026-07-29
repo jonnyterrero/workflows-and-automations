@@ -1,0 +1,5 @@
+# Per-machine Anthropic workspace IDs
+dist/skill_ids.json
+dist/agent_ids.json
+# Built ZIPs (rebuild with scripts/build_skills.py)
+dist/skills/*.zip

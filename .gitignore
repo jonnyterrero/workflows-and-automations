@@ -14,3 +14,23 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Never commit full upstream clones into this hub
+/ruflo/
+/payload/
+/claude-mem/
+/context7/
+/repomix/
+/superpowers/
+/obsidian-skills/
+/ui-ux-pro-max-skill/
+/claude-mem-plugin-slim/
+
+# Agent-team Anthropic workspace IDs (per-machine)
+agent-team/dist/skill_ids.json
+agent-team/dist/agent_ids.json
+
+# Python
+__pycache__/
+*.py[cod]
+

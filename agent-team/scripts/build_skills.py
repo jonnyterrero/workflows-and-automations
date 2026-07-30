@@ -21,10 +21,21 @@ def parse_frontmatter(text:str)->dict[str,str]:
         out[key]=m.group(1).strip().strip('"\'')
     return out
 
+SMART_QUOTES={'“':'"','”':'"','‘':"'",'’':"'"}
+
+def check_frontmatter_chars(text:str)->None:
+    """Smart quotes in frontmatter parse as literal scalar text, not string delimiters."""
+    fm=text.split('---',2)[1]
+    found=sorted({c for c in fm if c in SMART_QUOTES})
+    if found:
+        pairs=', '.join(f'{c!r} (U+{ord(c):04X}) -> {SMART_QUOTES[c]!r}' for c in found)
+        raise ValueError(f'smart quote(s) in frontmatter; replace with ASCII: {pairs}')
+
 def validate(folder:Path)->None:
     p=folder/'SKILL.md'
     if not p.exists(): raise ValueError('missing SKILL.md')
     text=p.read_text(encoding='utf-8')
+    check_frontmatter_chars(text)
     meta=parse_frontmatter(text)
     name=meta['name']; desc=meta['description']
     if name!=folder.name: raise ValueError(f'name {name!r} must match folder {folder.name!r}')

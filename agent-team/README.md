@@ -13,6 +13,7 @@ Portable specialist skills + Managed Agents + Cursor exports. Lives in this repo
 | `config/operator.context.yaml` | Optional personal academic context (no secrets) |
 | `cursor/` | Versioned Cursor skills/agents export |
 | `docs/ROUTING_MATRIX.md` | Ownership and conflict precedence |
+| `docs/DEPLOYMENT_STATUS.md` | Live deploy state, MCP needs, kill switches, remaining steps |
 | `evals/` | Baseline trigger/boundary/freshness fixtures |
 | `scripts/` | Build, upload, deploy, generate, Cursor sync/install |
 

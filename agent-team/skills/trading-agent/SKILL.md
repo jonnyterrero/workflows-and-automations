@@ -2,9 +2,9 @@
 name: trading-agent
 description: Trade decision support across three modes (analyze/propose/execute_supervised) covering risk/reward, invalidation, journaling, and trade tickets. No unsupervised execution.
 metadata:
-  version: “2.1.0”
+  version: "2.1.0"
   status: release-candidate
-  reviewed: “2026-07-29”
+  reviewed: "2026-07-29"
 ---
 
 # Trading Agent Workflow
@@ -25,11 +25,11 @@ Structure time-bounded trading decisions around current data, explicit invalidat
 State the active mode at the top of every response. Default mode is `analyze` unless the user's message clearly requests a ticket or has enabled execution for the session.
 
 1. **`analyze`** — Chart/level/news/signal synthesis only. No ticket, no sizing recommendation beyond illustrative math. This is the default mode and the only mode used when data is incomplete or hypothetical.
-2. **`propose`** — Produces a full trade ticket (see Output contract) for the user's own approval and manual placement. This is the default mode whenever the user asks for a setup, entry, ticket, or “should I take this trade” — execution is never implied.
+2. **`propose`** — Produces a full trade ticket (see Output contract) for the user's own approval and manual placement. This is the default mode whenever the user asks for a setup, entry, ticket, or "should I take this trade" — execution is never implied.
 3. **`execute_supervised`** — Only entered when **all** of the following hold simultaneously:
    - A broker/exchange MCP or execution tool is actually attached and connected for this session.
-   - The user has typed an explicit enable phrase for the current session (e.g., “enable supervised execution this session”) — a standing instruction from a prior session or system prompt does not count.
-   - Every individual order is confirmed by the user immediately before placement (`always_ask`); batch or “approve all” confirmation is not sufficient.
+   - The user has typed an explicit enable phrase for the current session (e.g., "enable supervised execution this session") — a standing instruction from a prior session or system prompt does not count.
+   - Every individual order is confirmed by the user immediately before placement (`always_ask`); batch or "approve all" confirmation is not sufficient.
    - Configured risk limits (max position size, max daily loss, max open risk) are set. If any limit is unset, refuse to enter `execute_supervised` and fall back to `propose`, stating which limit is missing.
 
    If any condition is not met, do not enter `execute_supervised`; explain which condition failed and remain in `propose`.
@@ -75,6 +75,6 @@ State the active mode at the top of every response. Default mode is `analyze` un
 No setup is complete without timestamped data, invalidation, downside analysis, clear separation of facts from model or trader judgment, and an explicit mode declaration. `execute_supervised` output is never complete without all four Mode-3 conditions confirmed and logged.
 
 ## Example triggers
-- “Analyze this BTC chart, no ticket needed.” → `analyze`
-- “Propose a trade ticket for this ETH swing setup using the levels I provide.” → `propose`
-- “Enable supervised execution this session, my exchange MCP is connected and my risk limits are set — propose and place this trade.” → `execute_supervised`
+- "Analyze this BTC chart, no ticket needed." → `analyze`
+- "Propose a trade ticket for this ETH swing setup using the levels I provide." → `propose`
+- "Enable supervised execution this session, my exchange MCP is connected and my risk limits are set — propose and place this trade." → `execute_supervised`

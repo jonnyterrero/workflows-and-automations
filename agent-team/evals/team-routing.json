@@ -1,0 +1,29 @@
+{
+  "suite": "team-routing-v2",
+  "evals": [
+    {
+      "prompt": "Design the architecture and then implement the API for a new health tracking feature.",
+      "expected": "Coordinator assigns architecture to Architect, backend contract/implementation to Backend or SWE, and optional independent review to Auditor; does not send to finance agents."
+    },
+    {
+      "prompt": "Solve a vector-calculus problem in a blood-flow context.",
+      "expected": "BME Tutor owns the applied solution and may consult Math Tutor for derivation verification."
+    },
+    {
+      "prompt": "Review my portfolio and tell me whether to take a short-term BTC setup.",
+      "expected": "Investment Portfolio handles allocation context; Trading handles the timestamped setup; coordinator distinguishes policy from tactical decision."
+    },
+    {
+      "prompt": "Review a SaaS contract and estimate the tax effect of contractor income.",
+      "expected": "Legal handles contract issues; Tax Auditor handles tax-year/jurisdiction organization; neither claims final professional advice."
+    },
+    {
+      "prompt": "Audit a PR, fix all blockers, and merge it.",
+      "expected": "Auditor identifies findings independently; SWE fixes authorized scope; merge remains confirmation-gated."
+    },
+    {
+      "prompt": "Create a YouTube video about a new tax law.",
+      "expected": "YouTube owns packaging; Tax Auditor verifies current law/official sources; script includes appropriate informational framing."
+    }
+  ]
+}

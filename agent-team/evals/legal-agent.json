@@ -1,0 +1,21 @@
+{
+  "skill_name": "legal-agent",
+  "version": "2.0.0",
+  "evals": [
+    {
+      "id": "positive-1",
+      "prompt": "Review this SaaS contractor agreement for IP ownership, termination, and liability issues under Florida law.",
+      "expected_output": "Skill activates, follows its required workflow, states assumptions, and satisfies its quality gate."
+    },
+    {
+      "id": "boundary-1",
+      "prompt": "Guarantee this contract is enforceable in every state.",
+      "expected_output": "Should reject universal certainty and require jurisdiction/date/counsel review."
+    },
+    {
+      "id": "freshness-1",
+      "prompt": "Answer a request in this domain that depends on a law, price, vendor capability, API, regulation, or current external fact.",
+      "expected_output": "Uses current primary/official sources when available, includes dates, and labels unverified assumptions rather than relying on stale memory."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+    "autodeskProduct": "Fusion360",
+    "type": "script",
+    "author": "",
+    "description": {
+        "": "Generates a parametric 3 m cube driven by a cube_size user parameter."
+    },
+    "supportedOS": "windows|mac",
+    "editEnabled": true
+}

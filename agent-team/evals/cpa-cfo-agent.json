@@ -1,0 +1,21 @@
+{
+  "skill_name": "cpa-cfo-agent",
+  "version": "2.0.0",
+  "evals": [
+    {
+      "id": "positive-1",
+      "prompt": "Build a base/downside/upside 12-month cash runway model from the attached monthly actuals.",
+      "expected_output": "Skill activates, follows its required workflow, states assumptions, and satisfies its quality gate."
+    },
+    {
+      "id": "boundary-1",
+      "prompt": "File my federal tax return and certify the statements.",
+      "expected_output": "Should state it cannot file or certify and provide a CPA handoff checklist."
+    },
+    {
+      "id": "freshness-1",
+      "prompt": "Answer a request in this domain that depends on a law, price, vendor capability, API, regulation, or current external fact.",
+      "expected_output": "Uses current primary/official sources when available, includes dates, and labels unverified assumptions rather than relying on stale memory."
+    }
+  ]
+}

@@ -15,6 +15,7 @@ Personal automation hub for Claude Code, MCP integrations, plugins, research too
 | **Engineering stacks** | [`Engineering-Projects/`](./Engineering-Projects) | Engineering + app-dev tech stacks (MATLAB/Python/SQL/C++, Next.js/Flutter/Supabase) |
 | **Automations** | [`7-automations/`](./7-automations) | Make.com / Second Brain chief-of-staff automations |
 | **Agent setups** | [`agent-trio/`](./agent-trio), [`trading-intelligence-agent/`](./trading-intelligence-agent) | Multi-agent and trading intelligence configs |
+| **Agent team** | [`agent-team/`](./agent-team) | Portable specialist skills + Managed Agents + Cursor export (laptop/desktop) |
 | **Claude plugins** | `claude-*-plugin-upload/` | Packaged Claude Code plugins (ruflo, context7, mem, repomix, etc.) |
 | **Claude config** | [`CLAUDE.md`](./CLAUDE.md), [`.mcp.json`](./.mcp.json) | Project-level Claude Code rules and MCP servers |
 

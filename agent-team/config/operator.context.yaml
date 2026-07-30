@@ -1,0 +1,12 @@
+# Optional per-operator context injected at deploy/export time.
+# Keep this file personal; do not put secrets here.
+# Empty values are ignored by scripts.
+
+operator:
+  academic:
+    status: "senior BME student"
+    minors:
+      - Computer Science
+      - Physics
+    notes: "Do not assume graduation date or current course unless provided in the session."
+  preferences: []

@@ -34,6 +34,10 @@
         "NOTEBOOKLM_PROFILE": "full"
       },
       "autoStart": false
+    },
+    "fusion": {
+      "type": "http",
+      "url": "${FUSION_MCP_URL:-http://127.0.0.1:27182/mcp}"
     }
   }
 }

@@ -1,0 +1,50 @@
+{
+  "$comment": "Repos the content engine watches. Add entries freely; set enabled=false to mute one without losing its notes.",
+  "sources": [
+    {
+      "owner": "modelcontextprotocol",
+      "repo": "modelcontextprotocol",
+      "label": "MCP spec + docs",
+      "niche": "ai-infrastructure",
+      "default_branch": "main",
+      "why_it_matters": "The protocol spec itself. Dated revision releases (e.g. 2026-07-28) are the clearest signal of where agent tooling is headed, and spec changes break or unlock real integrations.",
+      "enabled": true
+    },
+    {
+      "owner": "modelcontextprotocol",
+      "repo": "servers",
+      "label": "MCP reference servers",
+      "niche": "ai-infrastructure",
+      "default_branch": "main",
+      "why_it_matters": "Reference server implementations. New servers are concrete 'you can now connect X' stories and map directly to tutorial content.",
+      "enabled": true
+    },
+    {
+      "owner": "huggingface",
+      "repo": "transformers",
+      "label": "Hugging Face Transformers",
+      "niche": "ai-models",
+      "default_branch": "main",
+      "why_it_matters": "New model architectures land here before most coverage exists. Release notes name the models, which is strong search demand early.",
+      "enabled": true
+    },
+    {
+      "owner": "huggingface",
+      "repo": "diffusers",
+      "label": "Hugging Face Diffusers",
+      "niche": "generative-media",
+      "default_branch": "main",
+      "why_it_matters": "Image and video generation pipelines. Highest visual-payoff source in the set, so it carries shorts and thumbnails well.",
+      "enabled": true
+    },
+    {
+      "owner": "higgsfield-ai",
+      "repo": "higgsfield",
+      "label": "Higgsfield (distributed training framework)",
+      "niche": "ml-training",
+      "default_branch": "main",
+      "why_it_matters": "Open-source distributed training/orchestration framework. Low activity - last release v0.0.4-rc in March 2024 - so treat it as background/evergreen material, not a news source. Note this is NOT the Higgsfield video-generation product, which has no public repo.",
+      "enabled": true
+    }
+  ]
+}

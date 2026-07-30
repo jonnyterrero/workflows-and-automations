@@ -16,6 +16,7 @@ Personal automation hub for Claude Code, MCP integrations, plugins, research too
 | **Automations** | [`7-automations/`](./7-automations) | Make.com / Second Brain chief-of-staff automations |
 | **Agent setups** | [`agent-trio/`](./agent-trio), [`trading-intelligence-agent/`](./trading-intelligence-agent) | Multi-agent and trading intelligence configs |
 | **Agent team** | [`agent-team/`](./agent-team) | Portable specialist skills + Managed Agents + Cursor export (laptop/desktop) |
+| **Content engine** | [`.claude/skills/content-engine/`](./.claude/skills/content-engine) | On-demand skill turning MCP / Hugging Face / Higgsfield repo activity into YouTube packages and written posts |
 | **Future-drivers research** | [`future-drivers-research/`](./future-drivers-research) | Four-agent thematic research loop on Claude Managed Agents |
 | **Claude plugins** | `claude-*-plugin-upload/` | Packaged Claude Code plugins (ruflo, context7, mem, repomix, etc.) |
 | **Claude config** | [`CLAUDE.md`](./CLAUDE.md), [`.mcp.json`](./.mcp.json) | Project-level Claude Code rules and MCP servers |
@@ -193,6 +194,7 @@ Claude will never read without explicit instruction:
 ├── README.md                          # This file
 ├── CLAUDE.md                          # Project-level Claude Code config
 ├── .mcp.json                          # MCP server configuration
+├── .claude/skills/content-engine/     # Repo-activity -> content skill (see its SETUP.md)
 ├── JonnyJr/                           # AI research helper (in-tree)
 ├── Engineering-Projects/              # Engineering + app dev tech stacks (subtree)
 ├── 7-automations/                     # Make.com and Second Brain automations

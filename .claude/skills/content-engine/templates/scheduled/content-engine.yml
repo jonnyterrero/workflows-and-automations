@@ -1,0 +1,82 @@
+# Scheduled content-engine digest (TEMPLATE - not active where it sits).
+#
+# To activate: copy to .github/workflows/content-engine.yml, then commit.
+#   cp .claude/skills/content-engine/templates/scheduled/content-engine.yml \
+#      .github/workflows/content-engine.yml
+#
+# What it does: collects release/commit activity for the repos in sources.json
+# and commits the digest. GitHub-hosted runners have open egress, so the REST
+# API path works here even though it is blocked in some sandboxes.
+#
+# It intentionally stops at the data layer. Draft generation needs a model; see
+# the optional step at the bottom.
+
+name: content-engine digest
+
+on:
+  schedule:
+    # Mondays 13:00 UTC. cron is always UTC - adjust for your timezone.
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: Lookback window in days
+        required: false
+        default: "14"
+
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Collect repo activity
+        env:
+          # The default token is enough for public-repo reads.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p 7-automations/content-engine/runs/$(date -u +%F)
+          python3 .claude/skills/content-engine/scripts/fetch_repo_activity.py \
+            --api \
+            --days "${{ github.event.inputs.days || '14' }}" \
+            --out "7-automations/content-engine/runs/$(date -u +%F)/digest.json"
+
+      - name: Upload digest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-engine-digest
+          path: 7-automations/content-engine/runs/**/digest.json
+
+      - name: Commit digest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 7-automations/content-engine/runs
+          if git diff --staged --quiet; then
+            echo "No new activity to commit."
+            exit 0
+          fi
+          git commit -m "content-engine: digest for $(date -u +%F)"
+          git push
+
+      # OPTIONAL: generate drafts from the digest.
+      #
+      # Add a step using Anthropic's Claude Code GitHub Action, pointing its
+      # prompt at the content-engine skill and the digest path above. Check the
+      # action's current README for the supported version tag and input names
+      # before pinning it, and store your key as the ANTHROPIC_API_KEY secret.
+      #
+      #   - uses: anthropics/claude-code-action@<current-version>
+      #     with:
+      #       anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      #       prompt: |
+      #         Use the content-engine skill. Read the digest at
+      #         7-automations/content-engine/runs/<date>/digest.json and produce a
+      #         long-form YouTube package plus an X thread for the top candidate.

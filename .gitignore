@@ -34,3 +34,6 @@ agent-team/dist/agent_ids.json
 __pycache__/
 *.py[cod]
 
+# Content-engine activity digests (regenerable; drafts under runs/ are kept)
+.claude/skills/content-engine/.cache/
+

@@ -1,14 +1,17 @@
-"""AI research routes — daily briefings and asset reports."""
+"""AI research routes — daily briefings, asset reports, and committee dossiers."""
 from __future__ import annotations
 
+import os
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from packages.ai_research.briefing import DailyBriefingGenerator
 from packages.ai_research.asset_report import AssetResearchReportGenerator
-from packages.storage.database import get_db, AsyncSessionLocal
+from packages.ai_research.briefing import DailyBriefingGenerator
+from packages.investment_agents.models import InvestmentCommitteeDossier, ResearchRequest
+from packages.investment_agents.orchestrator import InvestmentResearchOrchestrator
+from packages.storage.database import AsyncSessionLocal, get_db
 from packages.storage.repositories import DailyBriefingRepository
 
 router = APIRouter()
@@ -22,8 +25,7 @@ async def generate_daily_briefing(
     briefing_date_str = (body or {}).get("date")
     briefing_date = date.fromisoformat(briefing_date_str) if briefing_date_str else None
     generator = DailyBriefingGenerator(AsyncSessionLocal)
-    briefing = await generator.generate(briefing_date)
-    return briefing
+    return await generator.generate(briefing_date)
 
 
 @router.get("/daily-briefing/latest")
@@ -56,8 +58,7 @@ async def generate_asset_report(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     generator = AssetResearchReportGenerator(AsyncSessionLocal)
-    report = await generator.generate(symbol.upper())
-    return report
+    return await generator.generate(symbol.upper())
 
 
 @router.get("/asset/{symbol}/latest")
@@ -66,3 +67,18 @@ async def get_latest_asset_report(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     raise HTTPException(501, "Asset report storage not yet implemented. Use POST /research/asset/{symbol} to generate.")
+
+
+@router.post("/committee", response_model=InvestmentCommitteeDossier)
+async def run_investment_committee(
+    request: ResearchRequest,
+    offline_demo: bool = Query(default=False, description="Use deterministic local demo without model calls."),
+) -> InvestmentCommitteeDossier:
+    """Run Theme Scout, Evidence Analyst, Risk Analyst, and Committee Manager end to end."""
+    orchestrator = InvestmentResearchOrchestrator()
+    use_offline = offline_demo or os.getenv("DEMO_MODE", "false").lower() == "true"
+    if use_offline:
+        return await orchestrator.run_offline_demo(request)
+    if not os.getenv("OPENAI_API_KEY"):
+        raise HTTPException(503, "OPENAI_API_KEY is required unless offline_demo=true or DEMO_MODE=true.")
+    return await orchestrator.run(request)

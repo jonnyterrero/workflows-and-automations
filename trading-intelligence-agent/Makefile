@@ -1,5 +1,5 @@
 .PHONY: setup install-dev seed bootstrap-live run-daily-job run-daily-research test lint format run-api run-worker \
-        run-scheduler run-collector run-demo docker-build docker-up docker-down \
+        run-scheduler run-collector run-demo run-committee-demo run-committee-live docker-build docker-up docker-down \
         docker-logs docker-bootstrap-live docker-run-daily-job docker-run-daily-research clean health
 
 PROJECT_DIR := $(shell pwd)
@@ -42,6 +42,12 @@ run-collector:
 run-demo:
 	DEMO_MODE=true DATABASE_URL=$(DATABASE_URL) \
 	$(PYTHON) -m uvicorn apps.api_service.main:app --reload --host 0.0.0.0 --port 8000
+
+run-committee-demo:
+	DEMO_MODE=true $(PYTHON) -m scripts.run_investment_committee_demo
+
+run-committee-live:
+	DEMO_MODE=false $(PYTHON) -m scripts.run_investment_committee_demo --live
 
 test:
 	DEMO_MODE=true DATABASE_URL=sqlite+aiosqlite:///./data/test_trading_intel.db \

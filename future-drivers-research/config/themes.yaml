@@ -1,0 +1,101 @@
+# Initial thematic universe.
+#
+# Deliberately narrow. This is the first asset universe, not an aspiration: US
+# listed equities and ETFs, BTC/ETH, Treasuries, and precious metals. Options,
+# forex, individual corporate bonds, low-cap tokens, and full-market screening
+# are explicitly out of scope until the research loop is trustworthy.
+#
+# These are starting points for the Theme Scout, not a watchlist and not a
+# recommendation. Membership here means "worth investigating", nothing more.
+
+universes:
+  technology_infrastructure:
+    description: >-
+      Compute, connectivity, and the physical plant behind them.
+    themes:
+      - name: semiconductors
+        why_watch: Capacity, leading-edge access, and cyclical position.
+      - name: semiconductor_equipment
+        why_watch: Capex cycle exposure ahead of the chipmakers themselves.
+      - name: networking
+        why_watch: Interconnect bandwidth is a live constraint on cluster scale.
+      - name: cloud_infrastructure
+        why_watch: Capex disclosures are a leading indicator for the tier below.
+      - name: cybersecurity
+        why_watch: Spend is comparatively non-discretionary.
+      - name: data_centers
+        why_watch: Power and land constraints, long-dated leases.
+
+  physical_infrastructure:
+    description: >-
+      Grid, generation, water, and industrial automation.
+    themes:
+      - name: grid_modernization
+        why_watch: Interconnection queues and utility capex plans are disclosed.
+      - name: nuclear_power
+        why_watch: Long build cycles; separate the fuel cycle from the builders.
+      - name: water_treatment
+        why_watch: Regulated demand, municipal budget dependence.
+      - name: pumps_valves_filtration
+        why_watch: Unglamorous second-order beneficiary of several themes above.
+      - name: industrial_automation
+        why_watch: Labour cost substitution; sensitive to manufacturing PMI.
+      - name: robotics_machine_vision
+        why_watch: Distinguish component makers from systems integrators.
+
+  emerging_innovation:
+    description: >-
+      Higher variance. Exposure is hardest to prove here, so evidence
+      discipline matters most.
+    themes:
+      - name: biotechnology_platforms
+        why_watch: Platform versus single-asset risk is the whole question.
+      - name: medical_devices
+        why_watch: Reimbursement is the binding constraint, not technology.
+      - name: advanced_manufacturing
+        why_watch: Reshoring incentives are datable policy events.
+      - name: space_infrastructure
+        why_watch: Launch cost curves; heavy government revenue concentration.
+      - name: critical_materials
+        why_watch: Jurisdiction risk usually dominates the demand story.
+
+  diversifiers:
+    description: >-
+      Held for behaviour under stress, not for thematic upside.
+    themes:
+      - name: treasury_exposure
+        why_watch: Duration positioning against the rate path.
+      - name: investment_grade_bonds
+        why_watch: Spread compensation versus credit risk.
+      - name: gold
+        why_watch: Real-rate sensitivity, central bank demand.
+      - name: silver
+        why_watch: Industrial demand makes it a poorer hedge than gold.
+      - name: btc
+        why_watch: Treat as a volatility sleeve, not a diversifier by default.
+      - name: eth
+        why_watch: Distinct from BTC; separate the network from the asset.
+
+# Macro series the Scout should check before accepting that a cycle is underway.
+macro_watchlist:
+  - series: IPUTIL
+    relevant_to: [grid_modernization, nuclear_power, data_centers]
+  - series: NEWORDER
+    relevant_to: [industrial_automation, robotics_machine_vision, advanced_manufacturing]
+  - series: TTLCONS
+    relevant_to: [data_centers, water_treatment]
+  - series: DGS10
+    relevant_to: [treasury_exposure, investment_grade_bonds, gold]
+  - series: FEDFUNDS
+    relevant_to: [treasury_exposure, btc]
+
+# Out of scope for the first release. Listed so the boundary is explicit rather
+# than merely unimplemented.
+excluded:
+  - individual_corporate_bonds
+  - options
+  - forex
+  - low_cap_defi_tokens
+  - newly_launched_dex_tokens
+  - automated_broker_execution
+  - full_market_screening

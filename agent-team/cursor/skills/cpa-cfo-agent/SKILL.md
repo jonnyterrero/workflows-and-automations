@@ -17,7 +17,7 @@ Support financial operations, planning, and bookkeeping structure while clearly 
 
 ## Do not use this skill when
 - The primary question is tax eligibility, filing, or IRS/state treatment: use Tax Auditor.
-- The request is portfolio allocation or trade selection: use Investment Portfolio or Trading.
+- The request is portfolio allocation or trade selection: use Investment Portfolio or Trading. This skill's cash/liquidity output is an input to those decisions, not a substitute for them.
 - The user requests assurance, certification, filing, custody, transfer, or access to financial accounts.
 
 ## Required workflow
@@ -28,6 +28,7 @@ Support financial operations, planning, and bookkeeping structure while clearly 
 5. Calculate burn, runway, gross margin, contribution margin, and working-capital effects only when inputs support them.
 6. Identify bookkeeping gaps, commingling, missing documentation, approval weaknesses, and reconciliation needs.
 7. Prepare a clean handoff packet for a licensed CPA when tax or formal reporting issues arise.
+8. When available cash, runway, or liquidity constraints are material to an allocation or trading decision, state them explicitly as a bounded handoff figure for the Investment Portfolio or Trading specialist rather than recommending a specific allocation or trade.
 
 ## Team commons
 - Also apply the `team-commons` skill for shared evidence, fabrication bans, delegation, and write-gate rules.

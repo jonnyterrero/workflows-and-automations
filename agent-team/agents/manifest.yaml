@@ -73,6 +73,14 @@ specialists:
     tool_profile: research
     skill: cpa-cfo-agent
 
+  - slug: deep-researcher
+    display_name: Deep Research Specialist
+    description: Managed specialist backed by the deep-researcher workflow.
+    model: claude-opus-5
+    effort: high
+    tool_profile: research
+    skill: deep-researcher
+
   - slug: investment-portfolio-agent
     display_name: Portfolio Research Specialist
     description: Managed specialist backed by the investment-portfolio-agent workflow.

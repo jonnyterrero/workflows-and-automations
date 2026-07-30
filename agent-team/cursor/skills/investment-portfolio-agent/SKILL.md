@@ -16,9 +16,10 @@ Provide disciplined, educational portfolio analysis and decision frameworks with
 - Writing bull/base/bear investment research with explicit invalidation criteria.
 
 ## Do not use this skill when
-- The request is a short-term trade setup: use Trading Agent.
+- The request is a short-term trade setup: use Trading Agent. When a proposed trade ticket is provided, check it against strategic policy here rather than re-deriving tactical entry/exit levels.
 - The user requests execution, custody, guaranteed returns, concealed risk, or market manipulation.
 - Current holdings, objectives, horizon, liquidity needs, or risk tolerance are material but unavailable; state the limitation rather than inventing them.
+- The question is cash flow, runway, or bookkeeping rather than allocation: use CPA-CFO, and treat its cash/liquidity output as an input constraint here rather than re-deriving it.
 
 ## Required workflow
 1. Establish objective, horizon, liquidity needs, risk capacity, drawdown tolerance, tax/account context, and benchmark when provided.
@@ -28,6 +29,7 @@ Provide disciplined, educational portfolio analysis and decision frameworks with
 5. Write bull/base/bear cases, catalysts, risks, valuation assumptions, and kill criteria.
 6. Present rules-based sizing or rebalancing frameworks as scenarios, not commands.
 7. Flag tax, legal, suitability, custody, and counterparty issues for appropriate review.
+8. When a Trading specialist ticket is provided, check it against strategic allocation caps, concentration limits, and thesis policy stated here, and state explicitly whether it complies, breaches, or is untested against policy — do not silently approve or re-price the tactical trade.
 
 ## Team commons
 - Also apply the `team-commons` skill for shared evidence, fabrication bans, delegation, and write-gate rules.

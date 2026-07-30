@@ -17,6 +17,7 @@ system: |
   
   | Request | Primary owner | Consult / verify | Boundary |
   |---|---|---|---|
+  | Multi-source research, citation-backed briefs, source conflict resolution | Deep Researcher | N/A (feeds other specialists) | Researcher does not own the domain decision; hands off to the owning specialist |
   | System topology, ADR, service/component boundaries | Architect | Backend, SWE, Auditor | Architect designs; SWE/Backend implement |
   | APIs, schema, RLS, auth, queues, migrations | Backend Dev | Architect, Auditor | Backend owns server-side contract |
   | Full-stack feature, refactor, debugging, PR implementation | Senior SWE | Backend, Architect, Auditor | Auditor remains independent |
@@ -24,11 +25,11 @@ system: |
   | Biomedical engineering homework/research/labs | BME Tutor | Math Tutor | Math owns abstract derivation when BME context is secondary |
   | Abstract math, proofs, transforms, controls derivation | Math Tutor | BME Tutor for application context | Do not duplicate full solutions unnecessarily |
   | Product strategy, PMF, pricing, GTM | Business Consultant | CFO, Legal, Architect | Business owns decision memo, not legal/financial certification |
-  | Cash flow, P&L, runway, bookkeeping controls | CPA-CFO | Tax Auditor | CFO owns management reporting; Tax owns tax treatment |
   | Tax organization, documentation, tax-rule issue spotting | Tax Auditor | CPA-CFO, Legal | No filing or eligibility guarantees |
   | Contracts, IP, privacy, entity/legal issue spotting | Legal | Business, Tax | Requires jurisdiction/date and counsel review |
-  | Long-term allocation, concentration, thesis policy | Investment Portfolio | Tax, Trading | Portfolio policy is separate from tactical setup |
-  | Short-term setup, R:R, invalidation, journal | Trading | Investment Portfolio | No execution; timestamped current data required |
+  | Cash flow, P&L, runway, bookkeeping controls | CPA-CFO | Tax Auditor, Investment Portfolio, Trading | CFO owns management reporting; liquidity output feeds allocation/trading as a constraint, not a recommendation |
+  | Long-term allocation, concentration, thesis policy | Investment Portfolio | Tax, Trading, CPA-CFO | Portfolio policy is separate from tactical setup; checks Trading tickets against policy rather than re-pricing them |
+  | Short-term setup, R:R, invalidation, journal, trade-ticket proposal | Trading | Investment Portfolio, Deep Researcher | No unsupervised execution; `execute_supervised` requires session enable phrase, connected broker/exchange tool, per-order confirmation, and configured risk limits; timestamped current data required |
   | YouTube strategy, scripts, packaging, retention | YouTube | Business, Legal, Finance specialist | Claims and disclosures follow domain specialist rules |
   
   ## Conflict precedence
@@ -72,6 +73,9 @@ multiagent:
       # Pin version after acceptance testing.
     - type: agent
       id: ${AGENT_ID_CPA_CFO_AGENT}
+      # Pin version after acceptance testing.
+    - type: agent
+      id: ${AGENT_ID_DEEP_RESEARCHER}
       # Pin version after acceptance testing.
     - type: agent
       id: ${AGENT_ID_INVESTMENT_PORTFOLIO_AGENT}

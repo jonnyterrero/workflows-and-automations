@@ -152,11 +152,28 @@ monitoring:
     connectors: [Public-Bot]
     self_contained: true
     self_contained_note: >-
-      The routine has no git source attached, so its fired sessions may not
-      have this repo on disk. The critical rules (costBasis-only performance,
-      automated-plan handling, measured crypto friction, experimental-sleeve
-      framing) are duplicated inline in the routine prompt so the brief works
-      without it. If you change a rule here, change it there too.
+      CONFIRMED by the validation run on 2026-07-31: the routine has no git
+      source attached and its fired session did NOT find this file on disk.
+      It ran from the inlined rules and produced a correct brief. The critical
+      rules (costBasis-only performance, automated-plan handling, measured
+      crypto friction, experimental-sleeve framing) are duplicated inline in
+      the routine prompt for exactly this reason.
+      THIS MEANS THE RULES LIVE IN TWO PLACES AND CAN DRIFT. If you change a
+      rule here, change it in the routine prompt too. To remove the
+      duplication, attach this repo as a source on the routine in the
+      claude.ai/code/routines UI - the create/update trigger API does not
+      expose a sources parameter, so it cannot be done from a session.
+  validation_run:
+    date: 2026-07-31
+    fired: manually, off-schedule
+    public_mcp_tools: PASS
+    websearch: PASS
+    policy_file_found: false
+    trades_placed: none
+    notes: >-
+      Spawned a research subagent for the move explanations and earnings
+      check. Correctly identified the 2026-07-27 plan fill as automated and
+      did not propose selling those positions.
   data_quality_warning: >-
     The instrumentGain and positionDailyGain fields from get_portfolio are
     unreliable - they report identical percentages for both fields and have

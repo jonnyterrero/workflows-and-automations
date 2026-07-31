@@ -138,8 +138,25 @@ monitoring:
     - "Allocation: cash / crypto / equity, and drift vs last week"
     - "Positions beyond +/-15% from cost basis, with the reason if findable"
     - "Earnings dates inside the next 10 days for held names"
-    - "News/catalysts on held names via Perplexity, cited"
+    - "News/catalysts on held names via WebSearch, with cited URLs"
     - "New sub-second fills = an automated plan ran; report, do not act"
+  news_source: WebSearch
+  news_source_note: >-
+    Routines can only attach claude.ai MCP connectors. Perplexity is available
+    in interactive Claude Code sessions but has no connector entry, so the
+    scheduled brief uses the built-in WebSearch tool instead. Use Perplexity
+    when working interactively; do not write it into routine prompts.
+  routine:
+    id: trig_01CD9msSCZ6aiRPT9JkFj9mD
+    schedule: "0 12 * * 1"   # Monday 08:00 ET (12:00 UTC during EDT)
+    connectors: [Public-Bot]
+    self_contained: true
+    self_contained_note: >-
+      The routine has no git source attached, so its fired sessions may not
+      have this repo on disk. The critical rules (costBasis-only performance,
+      automated-plan handling, measured crypto friction, experimental-sleeve
+      framing) are duplicated inline in the routine prompt so the brief works
+      without it. If you change a rule here, change it there too.
   data_quality_warning: >-
     The instrumentGain and positionDailyGain fields from get_portfolio are
     unreliable - they report identical percentages for both fields and have

@@ -34,3 +34,6 @@ agent-team/dist/agent_ids.json
 __pycache__/
 *.py[cod]
 
+# Per-session hook state (session-restore, routing, pending insights)
+.claude-flow/
+

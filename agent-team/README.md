@@ -66,8 +66,20 @@ default) so suites finish unattended. It records responses into
 
 ```bash
 python scripts/install_cursor_local.py                    # -> ~/.cursor
-python scripts/install_cursor_local.py --target claude    # -> ~/.claude/skills
+python scripts/install_cursor_local.py --target claude    # -> ~/.claude/skills (this machine only)
+python scripts/install_cursor_local.py --target project   # -> <repo>/.claude/skills (committed)
 ```
+
+**Every new Claude Code session already loads the 15 skills** — the `project`
+copy lives in `.claude/skills/`, is committed, and Claude Code discovers it on
+open. Nothing has to be installed first, on any machine or in a web session.
+A `SessionStart` hook (`.claude/helpers/sync-agent-skills.cjs`) re-copies
+`agent-team/skills/` over that directory at start, so editing the canonical
+source is enough — a stale project copy self-heals on the next session.
+
+Run `--target project` yourself only when you want the refresh committed in the
+same change as the source edit. `--target claude` is now optional; if you keep a
+`~/.claude/skills/` copy it can drift from the repo, so prefer removing it.
 
 `dist/skill_ids.json` and `dist/agent_ids.json` are gitignored — each Anthropic workspace gets its own IDs. Rebuild ZIPs with `build_skills.py`; do not commit them.
 
@@ -82,8 +94,10 @@ See [`cursor/INSTALL.md`](./cursor/INSTALL.md).
 1. Change domain logic in `skills/<slug>/SKILL.md`.
 2. Change shared policy in `skills/team-commons/SKILL.md`.
 3. Change models/tools/roster in `agents/manifest.yaml`, then run `generate_agent_templates.py`.
-4. Refresh Cursor export with `sync_cursor_export.py`.
-5. Commit and push; pull on the other machine and re-run install.
+4. Refresh Cursor export with `sync_cursor_export.py`, and the project copy with
+   `install_cursor_local.py --target project`.
+5. Commit and push; pulling on the other machine is enough for Claude Code —
+   only Cursor still needs `install_cursor_local.py` re-run.
 
 ## Security
 

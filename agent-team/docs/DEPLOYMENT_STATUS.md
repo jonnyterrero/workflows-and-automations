@@ -3,7 +3,7 @@
 **Release:** 2.1.0
 **Status date:** 2026-07-30
 **Local build:** green (15 skills validated + packaged)
-**Claude Code runtime:** LIVE — 15 skills installed to `~/.claude/skills/` and loading
+**Claude Code runtime:** LIVE — 15 skills committed to `.claude/skills/`, discovered at session start on every machine and in web sessions
 **Managed Agents runtime:** LIVE — 15 skills uploaded, 14 specialists + coordinator created
 
 ## Live IDs
@@ -38,6 +38,27 @@ Deployed via `--phase specialists` → eval gate → `--phase coordinator`, so t
 
 Copy `agent-team/dist/agent_ids.json` to the laptop manually rather than re-running the deploy there.
 
+## Session bootstrap (how the skills load)
+
+Discovery is repo-based, not machine-based:
+
+- `.claude/skills/` holds all 15 agent skills and is committed. Claude Code
+  loads project skills at session start, so a fresh clone, a second machine, or
+  a Claude Code web container has them with no install step.
+- `SessionStart` runs `.claude/helpers/sync-agent-skills.cjs`, which re-copies
+  `agent-team/skills/` (canonical source) over `.claude/skills/`. Editing the
+  source is enough; the project copy self-heals next session. The script never
+  fails a session — any error is caught and printed.
+- Hook commands are relative (`node .claude/helpers/…`), not
+  `cmd /c node %CLAUDE_PROJECT_DIR%/…`. The old form was Windows-only: on Linux
+  and in web sessions every hook died with `cmd: not found`, silently — session
+  restore, routing, post-edit, and memory sync all no-oped. Same fix applied to
+  the status line, which was `sh -c` and therefore POSIX-only.
+
+The previous mechanism was `install_cursor_local.py --target claude` writing to
+`~/.claude/skills/`, which is per-machine and outside git. It had already
+drifted — that copy was missing `deep-researcher` entirely.
+
 ## Session mechanics (learned the hard way)
 
 Driving a Managed Agent session: `sessions.create(agent=..., environment_id=...)` → `sessions.events.send(session_id, events=[{"type": "user.message", ...}])` → poll `sessions.events.list`.
@@ -53,7 +74,7 @@ That last point matters for any unattended flow: a run with `always_ask` tools w
 | | Claude Code / Desktop | Managed Agents (Console/API) |
 |---|---|---|
 | Status | **Live now** | Blocked on API key |
-| Skills | `~/.claude/skills/` via `install_cursor_local.py --target claude` | `upload_skills.py --execute` |
+| Skills | `.claude/skills/` in the repo — committed, loads in every session | `upload_skills.py --execute` |
 | Public brokerage MCP | **Connected and authenticated** | Must be configured separately in Console |
 | Coordinator/multiagent | No — skills only | Yes, `deploy_agents.py` |
 

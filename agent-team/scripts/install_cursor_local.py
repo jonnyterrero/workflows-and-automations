@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-"""Install agent-team skills into the local Cursor or Claude Code user dirs.
+"""Install agent-team skills into the local Cursor / Claude Code dirs.
 
 Uses HOME / USERPROFILE — never hardcodes a machine-specific absolute path.
 
   --target cursor  (default)  cursor/skills + cursor/agents -> ~/.cursor/
   --target claude              skills/                      -> ~/.claude/skills/
+  --target project             skills/                      -> <repo>/.claude/skills/
 
 Cursor gets the adapted export; Claude Code gets the canonical `skills/`
 folders, which are already in Claude Agent Skill format.
+
+`project` is the one that survives a fresh machine or a web session: the copy
+is committed with the repo, so every new session discovers the skills without
+anyone running an installer first. `claude` only ever affects the machine it
+runs on.
 """
 from __future__ import annotations
 
@@ -17,6 +23,7 @@ import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parent
 SRC_SKILLS = ROOT / "cursor" / "skills"
 SRC_AGENTS = ROOT / "cursor" / "agents"
 SRC_CLAUDE_SKILLS = ROOT / "skills"
@@ -51,9 +58,9 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true", help="Print targets without copying")
     ap.add_argument(
         "--target",
-        choices=("cursor", "claude"),
+        choices=("cursor", "claude", "project"),
         default="cursor",
-        help="Install into ~/.cursor (default) or ~/.claude/skills",
+        help="Install into ~/.cursor (default), ~/.claude/skills, or <repo>/.claude/skills",
     )
     ap.add_argument(
         "--skills-only",
@@ -67,9 +74,13 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    if args.target == "claude":
-        skills_dest = user_home(".claude") / "skills"
-        print(f"Claude Code skills: {skills_dest}")
+    if args.target in ("claude", "project"):
+        if args.target == "claude":
+            skills_dest = user_home(".claude") / "skills"
+            print(f"Claude Code user skills: {skills_dest}")
+        else:
+            skills_dest = REPO_ROOT / ".claude" / "skills"
+            print(f"Project skills (committed, loads in every session): {skills_dest}")
         total = copy_tree(SRC_CLAUDE_SKILLS, skills_dest, dry_run=args.dry_run)
         print(f"{'Would install' if args.dry_run else 'Installed'} {total} files")
         return

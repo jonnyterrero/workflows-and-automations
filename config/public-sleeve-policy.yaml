@@ -163,6 +163,75 @@ monitoring:
     shown implausible same-day moves (MSFT +14.8% / AAPL -7.7% simultaneously).
     Compute performance from costBasis only.
 
+# ---------------------------------------------------------------------------
+# agent-team integration (see agent-team/skills/trading-agent/SKILL.md)
+# ---------------------------------------------------------------------------
+agent_team_integration:
+  deployment_status: NOT_DEPLOYED
+  deployment_note: >-
+    As of 2026-07-31 no Managed Agents have been created (agent-team/
+    DEPLOYMENT_STATUS.md: "Upload / agent creation - NOT DONE"). The
+    specialist templates are definitions, not live agents. Nothing below is
+    active until deploy_agents.py runs with a real API key.
+
+  # The single most common way to get this wrong.
+  surface_map:
+    claude_code_session: >-
+      What we use now. Public MCP is attached here as a claude.ai connector.
+      This is where the weekly routine runs.
+    managed_agents: >-
+      Created via deploy_agents.py through the API. A claude.ai connector does
+      NOT attach to these - the MCP must be configured on the agent definition
+      in Console, separately. The Public connector does not reach them.
+    okx_local_mcp: >-
+      okx-trade-mcp runs as a local stdio process on the operator's machine.
+      It is not a claude.ai connector, so it reaches neither the routine nor
+      the Managed Agents. Interactive local sessions only.
+
+  # trading-agent SKILL.md requires all four simultaneously for
+  # execute_supervised. Two are satisfiable from this file; two are not.
+  execute_supervised_gate:
+    connected_broker_tool: "SATISFIED on the Claude Code surface (Public MCP)"
+    per_order_confirmation: "SATISFIED - see execution.approval_scope above"
+    configured_risk_limits: "See risk_limits below. MUST be restated in-session."
+    session_enable_phrase: >-
+      NOT SATISFIABLE FROM A FILE, BY DESIGN. The skill refuses to reuse a
+      prior session's enable phrase. Do not attempt to encode one here.
+
+  # These are DEFAULTS TO PROPOSE, not standing authorization.
+  # trading-agent SKILL.md: "Refuse to raise, ignore, or silently reuse a
+  # prior session's risk limits or enable phrase; both are scoped to the
+  # current session only." A limit written in this file therefore does NOT
+  # satisfy the gate - the operator must restate it in the live session.
+  # This file exists so the operator does not have to reinvent the numbers,
+  # not so the agent can skip asking for them.
+  risk_limits:
+    binding: false
+    must_be_restated_in_session: true
+    max_position_size_usd: 50      # ~5% of a ~$920 sleeve
+    max_daily_loss_usd: 30         # ~3.3% of sleeve
+    max_open_risk_usd: 100         # ~11% of sleeve at risk across all positions
+    basis: "Sized against a ~$920 sleeve as of 2026-07-31. Revisit if the sleeve changes materially."
+
+  # trading-agent SKILL.md: "never assume a venue, custody model, or
+  # settlement mechanism the user has not stated."
+  venue_facts:
+    venue: "Public.com"
+    custody: "Broker-held (Public); crypto is custodial on-platform"
+    settlement: "Cash account. No margin, no leverage, no shorting."
+    fractional: "Yes - all equity positions are fractional (largest 0.36 sh)"
+    crypto_note: "SOL and BTC were transferred off-platform 2026-07-29; on-platform crypto may be transient"
+
+  routing:
+    allocation_and_concentration: investment-portfolio-agent
+    tactical_entry_exit: trading-agent
+    liquidity_as_constraint: cpa-cfo-agent
+    note: >-
+      Per docs/ROUTING_MATRIX.md, Portfolio checks Trading tickets against
+      policy rather than re-pricing them, and CFO liquidity output feeds
+      allocation as a constraint, not a recommendation. This file is the
+      "stated strategic allocation policy" those cross-checks refer to.
+
 disclaimers:
   - "This agent produces decision support, not financial advice."
   - "It is not a fiduciary and has no view of tax situation, income, or goals."

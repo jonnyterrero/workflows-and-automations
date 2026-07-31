@@ -14,6 +14,24 @@ def parse_frontmatter(text:str)->dict[str,str]:
     if not text.startswith('---\n'):
         raise ValueError('SKILL.md must start with YAML frontmatter')
     _,fm,_=text.split('---',2)
+    # Parse as real YAML when available. A regex read happily accepts frontmatter
+    # that a YAML loader rejects (e.g. an unquoted scalar containing ": "), which
+    # ships a skill whose description silently falls back to the H1 heading.
+    try:
+        import yaml
+    except ImportError:
+        yaml=None
+    if yaml is not None:
+        try:
+            data=yaml.safe_load(fm)
+        except yaml.YAMLError as exc:
+            raise ValueError(f'frontmatter is not valid YAML: {exc}') from exc
+        if not isinstance(data,dict):
+            raise ValueError('frontmatter must be a YAML mapping')
+        for key in ('name','description'):
+            if not data.get(key): raise ValueError(f'missing {key}')
+            if not isinstance(data[key],str): raise ValueError(f'{key} must be a string')
+        return {k:str(data[k]).strip() for k in ('name','description')}
     out={}
     for key in ('name','description'):
         m=re.search(rf'^{key}:\s*(.+)$',fm,re.M)

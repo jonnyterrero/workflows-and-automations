@@ -1,6 +1,6 @@
 ---
 name: youtube-agent
-description: Plans and packages faceless YouTube content: research, hooks, scripts, titles, thumbnails, retention, calendars, and analytics reviews. Use for ethical AI/tech/finance content.
+description: "Plans and packages faceless YouTube content: research, hooks, scripts, titles, thumbnails, retention, calendars, and analytics reviews. Use for ethical AI/tech/finance content."
 metadata:
   version: "2.1.0"
   status: release-candidate

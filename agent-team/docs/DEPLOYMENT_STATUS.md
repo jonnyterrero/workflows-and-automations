@@ -3,7 +3,33 @@
 **Release:** 2.1.0
 **Status date:** 2026-07-30
 **Local build:** green (15 skills validated + packaged)
-**Live workspace state:** nothing uploaded or created yet — no API key was used in the build session
+**Claude Code runtime:** LIVE — 15 skills installed to `~/.claude/skills/` and loading
+**Managed Agents runtime:** not deployed — blocked on a rotated API key
+
+## Two runtimes, don't confuse them
+
+| | Claude Code / Desktop | Managed Agents (Console/API) |
+|---|---|---|
+| Status | **Live now** | Blocked on API key |
+| Skills | `~/.claude/skills/` via `install_cursor_local.py --target claude` | `upload_skills.py --execute` |
+| Public brokerage MCP | **Connected and authenticated** | Must be configured separately in Console |
+| Coordinator/multiagent | No — skills only | Yes, `deploy_agents.py` |
+
+A claude.ai connector does **not** carry over to Managed Agents created through the API. The Public MCP works in Claude Code today; the Console agents will need their own MCP configuration.
+
+## Public brokerage connector
+
+Verified `check_setup`: authenticated, two accounts (BROKERAGE, HIGH_YIELD).
+
+**The connector has full order scope**, not read-only: `place_order`, `place_short_order`, `place_multileg_order`, four spread variants, `cancel_order`, `cancel_and_replace_order`, and `flatten_and_go_short`.
+
+Read-only-first is now enforced in `.claude/settings.json` rather than by skill text alone:
+- **Denied** — all 10 order-mutating tools above
+- **Allowed** — the 14 read-only `get_*`/`check_setup` tools and all 7 `preflight_*` tools
+
+`preflight_*` validates an order without placing it, which is exactly what `trading-agent` `propose` mode needs. So read-only-first costs nothing in the ticket workflow.
+
+Confirmed live: after adding the deny rules, the 10 order tools dropped out of the available tool surface entirely. To enable supervised execution later, move specific tools from `deny` to `ask` — never to `allow`.
 
 ---
 
@@ -95,6 +121,20 @@ Typical chain: Deep Researcher brief → Portfolio checks against strategic poli
 
 ---
 
+## Use it today (Claude Code, no API key needed)
+
+The skills are live in Claude Code right now. In any session:
+
+| Ask | Skill that fires | What you get |
+|---|---|---|
+| "Research X, cited, before I build a thesis" | `deep-researcher` | Brief + evidence table + confidence + what would change it |
+| "Pull my Public portfolio and show allocation drift" | `investment-portfolio-agent` | Real positions via MCP, drift vs targets, concentration flags |
+| "Analyze this chart, no ticket" | `trading-agent` (`analyze`) | Levels/signal read, no sizing |
+| "Propose a ticket for this setup" | `trading-agent` (`propose`) | Full ticket + `preflight_order` validation, nothing placed |
+| "What's my runway given these transactions" | `cpa-cfo-agent` | Reconciled cash view, assumptions separated from actuals |
+
+Order placement is denied at the harness layer, so `propose` is the ceiling until you deliberately change that.
+
 ## Remaining human steps
 
 1. Rotate the API key that was pasted into the build session before using it (it is in the on-disk transcript).
@@ -115,5 +155,7 @@ Typical chain: Deep Researcher brief → Portfolio checks against strategic poli
 - **Versions unpinned** — `latest` throughout. Pin after eval acceptance.
 - **Eval coverage uneven** — only Deep Researcher and Trading meet the ≥10 bar. Portfolio and CPA-CFO were patched for interoperability but their eval files still hold the 3-eval baseline and do not yet test the new cross-agent handoff behavior.
 - **Coordinator not gated in script** — see note above.
-- **Evals are unexecuted** — every eval in `evals/` is a written expectation, not a recorded pass. Nothing has been run against a live model.
+- **Evals are unexecuted** — every eval in `evals/` is a written expectation, not a recorded pass. Nothing has been run against a live model. The skills being *loaded* is not the same as their boundaries being *tested*.
 - **Cursor export is current** — `sync_cursor_export.py` re-run; 15 skills + coordinator exported including `deep-researcher`.
+- **Deny list is explicit, not wildcard** — if Public adds a new order tool (say `place_bracket_order`), it will not be denied automatically. Re-check the tool list after any connector update.
+- **Two frontmatter bugs found and fixed this session** — smart quotes in `trading-agent` metadata, and an unquoted `": "` in `youtube-agent`'s description that made YAML reject the frontmatter and silently fall back to the H1 heading. `build_skills.py` now parses frontmatter with `yaml.safe_load` and rejects smart quotes, so both classes fail the build instead of shipping.

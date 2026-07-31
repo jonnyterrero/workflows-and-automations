@@ -33,15 +33,45 @@ python scripts/install_cursor_local.py       # copies into ~/.cursor on this mac
 ```bash
 python scripts/upload_skills.py              # dry run
 python scripts/upload_skills.py --execute    # needs ANTHROPIC_API_KEY
-python scripts/deploy_agents.py              # dry run
-python scripts/deploy_agents.py --execute
+
+# Specialists first, so evals can gate the coordinator
+python scripts/deploy_agents.py --phase specialists --execute
+python scripts/run_evals.py --skill trading-agent
+python scripts/deploy_agents.py --phase coordinator --execute
+
+python scripts/pin_versions.py --execute     # move off skill version `latest`
+```
+
+`--phase all` (the default) creates specialists and coordinator in one pass and
+skips the gate. `deploy_agents.py` has no reuse check, so running it on a second
+machine creates a duplicate team — copy `dist/agent_ids.json` across instead.
+`upload_skills.py` is safe to re-run; it matches on title and reports `reused`.
+
+### Evals
+
+```bash
+python scripts/run_evals.py --skill deep-researcher
+python scripts/run_evals.py --skill trading-agent --ids adversarial-1,realistic-4
+python scripts/run_evals.py --coordinator          # team-routing.json
+python scripts/run_evals.py --all
+```
+
+Sessions park silently on `always_ask` tools: the agent emits `agent.tool_use`,
+the session goes idle, and nothing else happens until a `user.tool_confirmation`
+event arrives. The runner answers those automatically (`--tool-policy deny` by
+default) so suites finish unattended. It records responses into
+`dist/eval_results/` rather than grading them — compare against `expected_output`.
+
+### Local install
+
+```bash
+python scripts/install_cursor_local.py                    # -> ~/.cursor
+python scripts/install_cursor_local.py --target claude    # -> ~/.claude/skills
 ```
 
 `dist/skill_ids.json` and `dist/agent_ids.json` are gitignored — each Anthropic workspace gets its own IDs. Rebuild ZIPs with `build_skills.py`; do not commit them.
 
 Pin accepted skill and agent versions in Console after your first acceptance pass. Avoid relying on `latest` in production.
-
-### Cursor
 
 After `sync_cursor_export.py`, run `install_cursor_local.py` on each machine (uses `%USERPROFILE%\.cursor` / `$HOME/.cursor` — no hardcoded user paths). Or open this repo as a workspace and point Cursor at `agent-team/cursor/`.
 

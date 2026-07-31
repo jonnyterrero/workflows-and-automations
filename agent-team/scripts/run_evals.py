@@ -131,6 +131,11 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Run eval fixtures against live agents")
     ap.add_argument("--skill", help="Skill slug, e.g. trading-agent")
     ap.add_argument("--all", action="store_true", help="Run every eval file with a live agent")
+    ap.add_argument(
+        "--coordinator",
+        action="store_true",
+        help="Run evals/team-routing.json against the coordinator (delegates to subagents; slow)",
+    )
     ap.add_argument("--ids", help="Comma-separated eval ids to run (default: all in the file)")
     ap.add_argument(
         "--tool-policy",
@@ -140,8 +145,8 @@ def main() -> None:
     )
     args = ap.parse_args()
 
-    if not args.skill and not args.all:
-        raise SystemExit("Pass --skill <slug> or --all")
+    if not args.skill and not args.all and not args.coordinator:
+        raise SystemExit("Pass --skill <slug>, --all, or --coordinator")
     if not os.getenv("ANTHROPIC_API_KEY"):
         raise SystemExit("ANTHROPIC_API_KEY is not set")
 
@@ -156,13 +161,46 @@ def main() -> None:
         raise SystemExit("No environment available. Create one in Console first.")
     env_id = envs[0].id
 
-    if args.all:
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    summary = []
+
+    if args.coordinator:
+        coord = ids.get("coordinator")
+        if not coord:
+            raise SystemExit("No coordinator in agent_ids.json. Run --phase coordinator --execute.")
+        path = EVALS / "team-routing.json"
+        raw = json.loads(path.read_text(encoding="utf-8"))["evals"]
+        # team-routing.json predates the per-skill schema: no ids, `expected` not
+        # `expected_output`. Normalize so results match every other result file.
+        cases = [
+            {
+                "id": c.get("id") or f"routing-{i}",
+                "prompt": c["prompt"],
+                "expected_output": c.get("expected_output") or c.get("expected", ""),
+            }
+            for i, c in enumerate(raw, 1)
+        ]
+        if args.ids:
+            wanted = {i.strip() for i in args.ids.split(",")}
+            cases = [c for c in cases if c["id"] in wanted]
+        print(f"\n=== coordinator ({len(cases)} cases) -> {coord['agent_id']} ===")
+        results = []
+        for case in cases:
+            res = run_one(client, coord["agent_id"], env_id, case, args.tool_policy)
+            results.append(res)
+            flag = "ok " if res["status"] == "responded" else "NONE"
+            print(f"  [{flag}] {res['id']}  ({res['tool_confirmations']['count']} tool confirms)")
+        out = RESULTS / "coordinator.json"
+        out.write_text(
+            json.dumps({"skill": "coordinator", "results": results}, indent=2), encoding="utf-8"
+        )
+        summary.append(("coordinator", sum(r["status"] == "responded" for r in results), len(results)))
+        print(f"  wrote {out.relative_to(ROOT)}")
+        slugs = []
+    elif args.all:
         slugs = [p.stem for p in sorted(EVALS.glob("*.json")) if p.stem in specialists]
     else:
         slugs = [args.skill]
-
-    RESULTS.mkdir(parents=True, exist_ok=True)
-    summary = []
 
     for slug in slugs:
         path = EVALS / f"{slug}.json"

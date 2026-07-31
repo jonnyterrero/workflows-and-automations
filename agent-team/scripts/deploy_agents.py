@@ -77,9 +77,24 @@ def operator_note() -> str:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--execute", action="store_true")
+    ap.add_argument(
+        "--phase",
+        choices=("specialists", "coordinator", "all"),
+        default="all",
+        help=(
+            "specialists: create specialists only, then stop so evals can gate the "
+            "coordinator. coordinator: create the coordinator from the specialist IDs "
+            "already in dist/agent_ids.json. all: both in one pass (default)."
+        ),
+    )
     args = ap.parse_args()
     m = load_manifest()
-    print(f"Plan: create {len(m['specialists'])} specialists + coordinator (release {m['release']})")
+    if args.phase == "coordinator":
+        print(f"Plan: create coordinator only (release {m['release']})")
+    elif args.phase == "specialists":
+        print(f"Plan: create {len(m['specialists'])} specialists, no coordinator (release {m['release']})")
+    else:
+        print(f"Plan: create {len(m['specialists'])} specialists + coordinator (release {m['release']})")
     if not args.execute:
         print("Dry run only. Review agents/manifest.yaml and generated templates first.")
         print("Requires dist/skill_ids.json only in --execute mode.")
@@ -100,7 +115,17 @@ def main() -> None:
     client = anthropic.Anthropic()
     made = {}
     note = operator_note()
-    for spec in m["specialists"]:
+    if args.phase == "coordinator":
+        if not OUT.exists():
+            raise SystemExit(
+                "Missing dist/agent_ids.json. Run --phase specialists --execute first."
+            )
+        made = json.loads(OUT.read_text(encoding="utf-8"))["specialists"]
+        missing_specialists = [s["slug"] for s in m["specialists"] if s["slug"] not in made]
+        if missing_specialists:
+            raise SystemExit(f"Missing specialist agent IDs: {missing_specialists}")
+        print(f"Reusing {len(made)} specialist agent IDs from {OUT.name}")
+    for spec in m["specialists"] if args.phase != "coordinator" else []:
         system = m["system_template"].format(
             display_name=spec["display_name"], skill=spec["skill"]
         )
@@ -133,6 +158,23 @@ def main() -> None:
         )
         made[spec["slug"]] = {"agent_id": a.id, "version": a.version}
         print("OK", spec["slug"], a.id, a.version)
+
+    if args.phase == "specialists":
+        OUT.parent.mkdir(parents=True, exist_ok=True)
+        prior = {}
+        if OUT.exists():
+            prior = json.loads(OUT.read_text(encoding="utf-8"))
+        payload = {"specialists": made}
+        if prior.get("coordinator"):
+            payload["coordinator"] = prior["coordinator"]
+        OUT.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        print("Wrote", OUT)
+        print(
+            f"\n{len(made)} specialists created. Coordinator NOT created.\n"
+            "Run the specialist evals, then: python scripts/deploy_agents.py "
+            "--phase coordinator --execute"
+        )
+        return
 
     routing = ROUTING.read_text(encoding="utf-8") if ROUTING.exists() else ""
     coord_system = (

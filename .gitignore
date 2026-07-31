@@ -10,6 +10,7 @@ build/
 !trading-intelligence-agent/.env.example
 *.pem
 *.key
+.claude/settings.local.json
 
 # OS
 .DS_Store

@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
-"""Install versioned agent-team/cursor exports into the local Cursor user dirs.
+"""Install agent-team skills into the local Cursor or Claude Code user dirs.
 
 Uses HOME / USERPROFILE — never hardcodes a machine-specific absolute path.
+
+  --target cursor  (default)  cursor/skills + cursor/agents -> ~/.cursor/
+  --target claude              skills/                      -> ~/.claude/skills/
+
+Cursor gets the adapted export; Claude Code gets the canonical `skills/`
+folders, which are already in Claude Agent Skill format.
 """
 from __future__ import annotations
 
@@ -13,13 +19,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC_SKILLS = ROOT / "cursor" / "skills"
 SRC_AGENTS = ROOT / "cursor" / "agents"
+SRC_CLAUDE_SKILLS = ROOT / "skills"
 
 
-def cursor_home() -> Path:
+def user_home(dirname: str) -> Path:
     base = os.environ.get("USERPROFILE") or os.environ.get("HOME")
     if not base:
         raise SystemExit("Neither USERPROFILE nor HOME is set")
-    return Path(base) / ".cursor"
+    return Path(base) / dirname
 
 
 def copy_tree(src: Path, dest: Path, *, dry_run: bool) -> int:
@@ -40,20 +47,34 @@ def copy_tree(src: Path, dest: Path, *, dry_run: bool) -> int:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Install agent-team Cursor exports locally")
+    ap = argparse.ArgumentParser(description="Install agent-team skills locally")
     ap.add_argument("--dry-run", action="store_true", help="Print targets without copying")
+    ap.add_argument(
+        "--target",
+        choices=("cursor", "claude"),
+        default="cursor",
+        help="Install into ~/.cursor (default) or ~/.claude/skills",
+    )
     ap.add_argument(
         "--skills-only",
         action="store_true",
-        help="Install skills only",
+        help="Install skills only (cursor target)",
     )
     ap.add_argument(
         "--agents-only",
         action="store_true",
-        help="Install agents only",
+        help="Install agents only (cursor target)",
     )
     args = ap.parse_args()
-    home = cursor_home()
+
+    if args.target == "claude":
+        skills_dest = user_home(".claude") / "skills"
+        print(f"Claude Code skills: {skills_dest}")
+        total = copy_tree(SRC_CLAUDE_SKILLS, skills_dest, dry_run=args.dry_run)
+        print(f"{'Would install' if args.dry_run else 'Installed'} {total} files")
+        return
+
+    home = user_home(".cursor")
     skills_dest = home / "skills"
     agents_dest = home / "agents"
     print(f"Cursor home: {home}")

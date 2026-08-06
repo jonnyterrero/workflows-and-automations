@@ -41,6 +41,23 @@ def parse_frontmatter(text:str)->dict[str,str]:
 
 SMART_QUOTES={'“':'"','”':'"','‘':"'",'’':"'"}
 
+def markdown_prose(text:str)->str:
+    """Return Markdown outside fenced code blocks for prose-only checks."""
+    prose=[]
+    fence=None
+    for line in text.splitlines():
+        stripped=line.lstrip()
+        marker=next((m for m in ('```','~~~') if stripped.startswith(m)),None)
+        if marker:
+            if fence is None:
+                fence=marker
+            elif marker==fence:
+                fence=None
+            continue
+        if fence is None:
+            prose.append(line)
+    return '\n'.join(prose)
+
 def check_frontmatter_chars(text:str)->None:
     """Smart quotes in frontmatter parse as literal scalar text, not string delimiters."""
     fm=text.split('---',2)[1]
@@ -61,7 +78,8 @@ def validate(folder:Path)->None:
     if 'anthropic' in name or 'claude' in name: raise ValueError('reserved word in name')
     if not (1<=len(desc)<=200): raise ValueError(f'description length {len(desc)} outside Claude.ai 1..200')
     if len(text.splitlines())>500: raise ValueError('SKILL.md exceeds 500 recommended lines')
-    if re.search(r'^ {4,}#{1,6}\s', text, re.M): raise ValueError('indented Markdown heading detected; headings would render as code')
+    if re.search(r'^ {4,}#{1,6}\s', markdown_prose(text), re.M):
+        raise ValueError('indented Markdown heading detected; headings would render as code')
     for f in folder.rglob('*'):
         if f.is_symlink(): raise ValueError(f'symlink not allowed: {f}')
         if f.is_file():

@@ -1,6 +1,6 @@
 # Single roster for Managed Agent templates + deploy_agents.py + Cursor export.
 # Edit here; regenerate YAML with: python scripts/generate_agent_templates.py
-release: "2.1.0"
+release: "2.2.0"
 team: jonny-agent-team
 
 commons_skill: team-commons
@@ -89,6 +89,14 @@ specialists:
     tool_profile: research
     skill: investment-portfolio-agent
 
+  - slug: options-desk-agent
+    display_name: Options Desk Specialist
+    description: Managed specialist backed by the options-desk-agent workflow.
+    model: claude-sonnet-5
+    effort: high
+    tool_profile: research
+    skill: options-desk-agent
+
   - slug: legal-agent
     display_name: Legal Issue-Spotting Specialist
     description: Managed specialist backed by the legal-agent workflow.
@@ -128,6 +136,14 @@ specialists:
     effort: high
     tool_profile: research
     skill: trading-agent
+
+  - slug: trading-ops-agent
+    display_name: Trading Operations Specialist
+    description: Managed specialist backed by the trading-ops-agent workflow.
+    model: claude-sonnet-5
+    effort: high
+    tool_profile: research
+    skill: trading-ops-agent
 
   - slug: youtube-agent
     display_name: YouTube Content Strategy Specialist

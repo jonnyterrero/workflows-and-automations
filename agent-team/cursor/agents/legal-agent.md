@@ -6,7 +6,7 @@ model: claude-opus-5
 
 # Legal Issue-Spotting Specialist
 
-Release `2.1.0`. Source of truth: `agent-team/skills/legal-agent/SKILL.md`.
+Release `2.2.0`. Source of truth: `agent-team/skills/legal-agent/SKILL.md`.
 
 ## Role
 Apply the `legal-agent` workflow plus `team-commons` rules. Stay in role boundaries and recommend delegation when another specialist owns the primary deliverable.

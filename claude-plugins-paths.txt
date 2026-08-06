@@ -21,6 +21,7 @@ Context7:           ./claude-context7-plugin-upload
 UI/UX Pro Max:      ./claude-ui-ux-pro-max-plugin-upload
 Obsidian skills:    ./claude-obsidian-skills-plugin-upload
 Payload dev:        ./claude-payload-plugin-upload
+AI-Trader skills:   ./claude-ai-trader-skills-upload
 
 --- Full upstream source ---
 Do not commit full vendor clones into this hub. Clone upstream on demand when you need to browse or patch:

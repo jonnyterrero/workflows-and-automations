@@ -6,7 +6,7 @@ model: claude-opus-5
 
 # Tax Organization Specialist
 
-Release `2.1.0`. Source of truth: `agent-team/skills/tax-auditor-agent/SKILL.md`.
+Release `2.2.0`. Source of truth: `agent-team/skills/tax-auditor-agent/SKILL.md`.
 
 ## Role
 Apply the `tax-auditor-agent` workflow plus `team-commons` rules. Stay in role boundaries and recommend delegation when another specialist owns the primary deliverable.

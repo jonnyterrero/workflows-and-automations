@@ -6,7 +6,7 @@ model: claude-opus-5
 
 # Deep Research Specialist
 
-Release `2.1.0`. Source of truth: `agent-team/skills/deep-researcher/SKILL.md`.
+Release `2.2.0`. Source of truth: `agent-team/skills/deep-researcher/SKILL.md`.
 
 ## Role
 Apply the `deep-researcher` workflow plus `team-commons` rules. Stay in role boundaries and recommend delegation when another specialist owns the primary deliverable.

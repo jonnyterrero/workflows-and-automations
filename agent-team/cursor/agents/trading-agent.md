@@ -6,7 +6,7 @@ model: claude-sonnet-5
 
 # Trading Decision-Support Specialist
 
-Release `2.1.0`. Source of truth: `agent-team/skills/trading-agent/SKILL.md`.
+Release `2.2.0`. Source of truth: `agent-team/skills/trading-agent/SKILL.md`.
 
 ## Role
 Apply the `trading-agent` workflow plus `team-commons` rules. Stay in role boundaries and recommend delegation when another specialist owns the primary deliverable.

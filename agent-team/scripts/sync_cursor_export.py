@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 from pathlib import Path
 
 try:
@@ -124,7 +125,8 @@ def main() -> None:
     OUT_SKILLS.mkdir(parents=True, exist_ok=True)
     OUT_AGENTS.mkdir(parents=True, exist_ok=True)
 
-    # Export commons alone + each specialist composed with commons
+    # Export commons alone + each specialist composed with commons.
+    exported = {"team-commons"}
     commons_out = OUT_SKILLS / "team-commons"
     commons_out.mkdir(parents=True, exist_ok=True)
     (commons_out / "SKILL.md").write_text(COMMONS.read_text(encoding="utf-8"), encoding="utf-8")
@@ -132,11 +134,23 @@ def main() -> None:
 
     for spec in m["specialists"]:
         slug = spec["skill"]
+        exported.add(slug)
         dest = OUT_SKILLS / slug
         dest.mkdir(parents=True, exist_ok=True)
         (dest / "SKILL.md").write_text(compose_skill(slug), encoding="utf-8")
         write_agent_md(spec, m["release"])
         print("exported", slug)
+
+    # Supporting skills are installed without becoming standalone agents.
+    # Preserve their complete directories so progressive references stay local.
+    for folder in sorted(path for path in SKILLS.iterdir() if path.is_dir()):
+        if folder.name in exported:
+            continue
+        dest = OUT_SKILLS / folder.name
+        if dest.exists():
+            shutil.rmtree(dest)
+        shutil.copytree(folder, dest)
+        print("exported supporting skill", folder.name)
 
     write_coordinator(m)
     print("exported coordinator")

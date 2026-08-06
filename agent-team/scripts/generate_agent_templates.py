@@ -200,7 +200,7 @@ model:
   id: {m['coordinator']['model']}
   effort: {m['coordinator']['effort']}
 system: |
-{chr(10).join('  ' + line if line else '  ' for line in system.splitlines())}
+{chr(10).join('  ' + line if line else '' for line in system.splitlines())}
 {tools_yaml('coordinator')}
 multiagent:
   type: coordinator

@@ -6,7 +6,7 @@ model: claude-opus-5
 
 # Senior Software Engineering Specialist
 
-Release `2.1.0`. Source of truth: `agent-team/skills/senior-swe-agent/SKILL.md`.
+Release `2.2.0`. Source of truth: `agent-team/skills/senior-swe-agent/SKILL.md`.
 
 ## Role
 Apply the `senior-swe-agent` workflow plus `team-commons` rules. Stay in role boundaries and recommend delegation when another specialist owns the primary deliverable.

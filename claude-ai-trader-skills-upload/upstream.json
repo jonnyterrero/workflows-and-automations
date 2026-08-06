@@ -1,0 +1,40 @@
+{
+    "repository":  "https://github.com/HKUDS/AI-Trader",
+    "revision":  "d03ff6c056b32ced735adf7c19ed8175adb1c8df",
+    "committed_at":  "2026-06-11T09:26:01Z",
+    "vendored_at":  "2026-08-05",
+    "license":  null,
+    "note":  "No repository license was reported by the GitHub API at vendoring time. Skill bodies are attributed to HKUDS/AI-Trader; local changes are limited to frontmatter, safety overlays, and credential-like example redactions.",
+    "skills":  [
+                   {
+                       "upstream_path":  "skills/ai4trade/SKILL.md",
+                       "vendored_name":  "ai4trade",
+                       "bundle_path":  "skills/ai4trade/SKILL.md"
+                   },
+                   {
+                       "upstream_path":  "skills/copytrade/SKILL.md",
+                       "vendored_name":  "ai4trade-copytrade",
+                       "bundle_path":  "skills/ai4trade-copytrade/SKILL.md"
+                   },
+                   {
+                       "upstream_path":  "skills/tradesync/SKILL.md",
+                       "vendored_name":  "ai4trade-tradesync",
+                       "bundle_path":  "skills/ai4trade-tradesync/SKILL.md"
+                   },
+                   {
+                       "upstream_path":  "skills/heartbeat/SKILL.md",
+                       "vendored_name":  "ai4trade-heartbeat",
+                       "bundle_path":  "skills/ai4trade-heartbeat/SKILL.md"
+                   },
+                   {
+                       "upstream_path":  "skills/market-intel/SKILL.md",
+                       "vendored_name":  "ai4trade-market-intel",
+                       "bundle_path":  "skills/ai4trade-market-intel/SKILL.md"
+                   },
+                   {
+                       "upstream_path":  "skills/polymarket/SKILL.md",
+                       "vendored_name":  "ai4trade-polymarket",
+                       "bundle_path":  "skills/ai4trade-polymarket/SKILL.md"
+                   }
+               ]
+}

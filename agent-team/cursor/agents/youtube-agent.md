@@ -6,7 +6,7 @@ model: claude-sonnet-5
 
 # YouTube Content Strategy Specialist
 
-Release `2.1.0`. Source of truth: `agent-team/skills/youtube-agent/SKILL.md`.
+Release `2.2.0`. Source of truth: `agent-team/skills/youtube-agent/SKILL.md`.
 
 ## Role
 Apply the `youtube-agent` workflow plus `team-commons` rules. Stay in role boundaries and recommend delegation when another specialist owns the primary deliverable.

@@ -97,9 +97,20 @@ Stop and ask when:
 
 ## History
 
-**2026-08-03 / 08-05 — first rebalance.** Starting book was $968: ETH 29.6%,
+**2026-08-03 → 08-06 — first rebalance.** Starting book was $968: ETH 29.6%,
 twenty ~$5 micro-positions worth 10% in aggregate, no broad-market core, $105
 idle cash. Consolidated the twenty micros into the dividend five, sold SCHO as
 redundant against the HYSA, trimmed the top-heavy satellites (PANW, AVGO, GOOGL)
-and the weakest theses (INTC, TEM, UBER). ETH trim to 15% was blocked at the
-permission layer and left outstanding.
+and the weakest theses (INTC, TEM, UBER). Opened the core with VTI $115.77 and
+VXUS $38.60. 25 sells, 7 buys, all filled.
+
+Landed at satellites 35.0%, dividend five 10.0%, cash 10.0% — all on target.
+
+**Outstanding: the ETH trim never executed.** It was blocked at the permission
+layer on 08-05 and was not retried. ETH therefore sits at 29.5% against a 15%
+target, and because it is occupying the core's space, the core could only be
+funded to 15.4% against its 30% target. These two deviations are the same
+$145 — they resolve together the moment ETH is trimmed, and not before. Until
+then the book is roughly twice as crypto-exposed as the policy intends. The
+next session to touch this account should treat closing that gap as the first
+order of business, not as drift to be re-derived.

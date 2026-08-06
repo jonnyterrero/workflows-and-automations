@@ -101,6 +101,9 @@ A run ships only if: every factual claim is traceable to a source URL, the title
 ## Scheduling
 On-demand by default. `SETUP.md` in this directory has ready-to-use templates for a scheduled Routine and a GitHub Actions workflow when you want it recurring.
 
+## Producing video from a draft
+Once a draft is approved, `content-production` renders it: ElevenLabs narration, Higgsfield visuals, ffmpeg assembly, and upload-ready YouTube metadata. It works from the draft this skill writes, so keep `source_draft` traceable.
+
 ## Example triggers
 - "Do a content run on the last two weeks of MCP and Hugging Face."
 - "Turn the newest MCP spec revision into a video package and an X thread."

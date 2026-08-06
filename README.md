@@ -17,6 +17,7 @@ Personal automation hub for Claude Code, MCP integrations, plugins, research too
 | **Agent setups** | [`agent-trio/`](./agent-trio), [`trading-intelligence-agent/`](./trading-intelligence-agent) | Multi-agent and trading intelligence configs |
 | **Agent team** | [`agent-team/`](./agent-team) | Portable specialist skills + Managed Agents + Cursor export (laptop/desktop) |
 | **Content engine** | [`.claude/skills/content-engine/`](./.claude/skills/content-engine) | On-demand skill turning MCP / Hugging Face / Higgsfield repo activity into YouTube packages and written posts |
+| **Content production** | [`.claude/skills/content-production/`](./.claude/skills/content-production) | Renders an approved draft into video: ElevenLabs narration, Higgsfield visuals, ffmpeg assembly, YouTube upload metadata |
 | **Future-drivers research** | [`future-drivers-research/`](./future-drivers-research) | Four-agent thematic research loop on Claude Managed Agents |
 | **Claude plugins** | `claude-*-plugin-upload/` | Packaged Claude Code plugins (ruflo, context7, mem, repomix, etc.) |
 | **Claude config** | [`CLAUDE.md`](./CLAUDE.md), [`.mcp.json`](./.mcp.json) | Project-level Claude Code rules and MCP servers |

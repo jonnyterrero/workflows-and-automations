@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "slug": "mcp-2026-07-28-spec",
+  "title": "The MCP spec update nobody is talking about",
+  "aspect": "16:9",
+  "fps": 30,
+  "source_draft": "7-automations/content-engine/runs/2026-07-30/youtube-long.md",
+  "audio": {
+    "narration": "assets/narration.mp3",
+    "music": "assets/bed.mp3",
+    "music_gain_db": -22
+  },
+  "subtitles": {
+    "file": "assets/captions.srt",
+    "burn": true,
+    "style": "Fontsize=42,Outline=2,Shadow=0"
+  },
+  "scenes": [
+    {
+      "id": "s1-hook",
+      "clip": "assets/scene-01.mp4",
+      "duration": 6.0,
+      "source": "higgsfield:cinema-studio",
+      "prompt": "Slow push in on a terminal, protocol diagram glowing, dark editorial mood",
+      "covers": "Hook: the spec revision shipped and it changes agent tooling"
+    },
+    {
+      "id": "s2-context",
+      "clip": "assets/scene-02.mp4",
+      "duration": 9.5,
+      "source": "higgsfield:kling",
+      "prompt": "Abstract network of connected nodes, cool blue, subtle drift",
+      "covers": "Beat 1: what MCP is and why revisions matter"
+    },
+    {
+      "id": "s3-change",
+      "clip": "assets/scene-03.mp4",
+      "duration": 12.0,
+      "source": "higgsfield:kling",
+      "prompt": "Screen-recording aesthetic, code diff scrolling, shallow depth of field",
+      "covers": "Beat 2: the actual change, quoting the release notes"
+    }
+  ],
+  "output": "final.mp4"
+}

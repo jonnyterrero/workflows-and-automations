@@ -1,0 +1,17 @@
+{
+  "video": "final.mp4",
+  "thumbnail": "assets/thumbnail.png",
+  "title": "The MCP spec update nobody is talking about",
+  "description": "What changed in the 2026-07-28 MCP revision, and what it means if you build agent tooling.\n\nSources:\nhttps://github.com/modelcontextprotocol/modelcontextprotocol/releases\n\nChapters:\n0:00 The change\n0:32 Why it matters\n1:48 What it breaks\n\nThis video covers open-source release notes. Nothing here is sponsored.",
+  "tags": ["MCP", "model context protocol", "AI agents", "developer tools"],
+  "categoryId": "28",
+  "privacyStatus": "private",
+  "selfDeclaredMadeForKids": false,
+  "publishAt": null,
+  "$notes": {
+    "categoryId": "28 = Science & Technology, 27 = Education, 24 = Entertainment",
+    "privacyStatus": "Leave as private. Unaudited API projects have uploads locked private regardless.",
+    "publishAt": "RFC3339 timestamp for scheduled publishing. Requires privacyStatus private and an audited project.",
+    "limits": "title <= 100 chars, description <= 5000 chars, tags <= ~500 chars total"
+  }
+}

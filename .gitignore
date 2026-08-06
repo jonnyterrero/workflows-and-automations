@@ -37,3 +37,16 @@ __pycache__/
 # Content-engine activity digests (regenerable; drafts under runs/ are kept)
 .claude/skills/content-engine/.cache/
 
+# Content-production media. Manifests and upload metadata stay in git; blobs do not.
+7-automations/content-engine/runs/**/assets/
+7-automations/content-engine/runs/**/.work/
+7-automations/content-engine/runs/**/*.mp4
+7-automations/content-engine/runs/**/*.mp3
+7-automations/content-engine/runs/**/*.wav
+7-automations/content-engine/runs/**/*.srt
+7-automations/content-engine/runs/**/*.ass
+
+# YouTube OAuth artifacts - credentials, never commit
+**/client_secret*.json
+**/youtube-token.json
+

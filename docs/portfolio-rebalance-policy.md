@@ -106,11 +106,23 @@ VXUS $38.60. 25 sells, 7 buys, all filled.
 
 Landed at satellites 35.0%, dividend five 10.0%, cash 10.0% — all on target.
 
-**Outstanding: the ETH trim never executed.** It was blocked at the permission
-layer on 08-05 and was not retried. ETH therefore sits at 29.5% against a 15%
-target, and because it is occupying the core's space, the core could only be
-funded to 15.4% against its 30% target. These two deviations are the same
-$145 — they resolve together the moment ETH is trimmed, and not before. Until
-then the book is roughly twice as crypto-exposed as the policy intends. The
-next session to touch this account should treat closing that gap as the first
-order of business, not as drift to be re-derived.
+**2026-08-07 — ETH trim cleared, rebalance complete.** The ETH sell that was
+blocked at the permission layer on 08-05 went through once re-confirmed by the
+owner: sold 0.07539732 ETH at $1,910.28 for $144.03, commission $3.35 (2.3%, as
+expected). Proceeds above the cash buffer went straight into the core — VTI
+$105.59 and VXUS $35.19, holding the 75/25 split.
+
+All five sleeves now in band on a $1,000.65 book:
+
+| Sleeve | Target | Actual |
+|---|---:|---:|
+| Growth satellites | 35% | 35.4% |
+| Core VTI/VXUS | 30% | 29.6% |
+| ETH | 15% | 15.1% |
+| Dividend five | 10% | 10.0% |
+| Cash | 10% | 10.0% |
+
+The core lands ~0.4pp light because the crypto commission left the book with
+that much less to deploy. Not worth a corrective trade — it is well inside the
+±5pp band, and trading to close a rounding gap is exactly the churn the bands
+exist to prevent.

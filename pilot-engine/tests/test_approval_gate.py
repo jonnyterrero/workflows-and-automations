@@ -18,9 +18,7 @@ def test_require_approved_batch_rejects_non_approved_status(
     status: str,
     firestore_client: FakeFirestoreClient,
 ) -> None:
-    firestore_client.documents["order_batches"] = {
-        "batch-1": {"status": status, "orders": []}
-    }
+    firestore_client.documents["order_batches"] = {"batch-1": {"status": status, "orders": []}}
 
     with pytest.raises(BatchNotApprovedError, match=status):
         require_approved_batch("batch-1", client=firestore_client)

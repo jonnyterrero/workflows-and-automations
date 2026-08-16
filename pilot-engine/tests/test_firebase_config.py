@@ -22,9 +22,7 @@ def test_firestore_rules_deny_all_client_access() -> None:
 
 
 def test_firestore_indexes_match_declared_queries() -> None:
-    config = json.loads(
-        (FIREBASE_DIR / "firestore.indexes.json").read_text(encoding="utf-8")
-    )
+    config = json.loads((FIREBASE_DIR / "firestore.indexes.json").read_text(encoding="utf-8"))
 
     actual = {
         (
@@ -57,9 +55,7 @@ def test_firestore_emulator_denies_unauthenticated_clients(method: str) -> None:
     )
     request = Request(
         documents_url,
-        data=b'{"fields":{"ticker":{"stringValue":"BLOCKED"}}}'
-        if method == "POST"
-        else None,
+        data=b'{"fields":{"ticker":{"stringValue":"BLOCKED"}}}' if method == "POST" else None,
         headers={"Content-Type": "application/json"},
         method=method,
     )

@@ -11,9 +11,7 @@ import firebase_admin
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-ALLOWED_BATCH_STATUSES = frozenset(
-    {"pending", "approved", "rejected", "executed", "failed"}
-)
+ALLOWED_BATCH_STATUSES = frozenset({"pending", "approved", "rejected", "executed", "failed"})
 
 
 class DocumentSnapshot(Protocol):
@@ -106,9 +104,7 @@ def get_target_weights(
     """Return ticker-to-weight values for one pilot."""
     pilot_id = _require_nonempty_string(pilot, "pilot")
     database = client or get_firestore_client()
-    query = database.collection("target_weights").where(
-        filter=FieldFilter("pilot", "==", pilot_id)
-    )
+    query = database.collection("target_weights").where(filter=FieldFilter("pilot", "==", pilot_id))
 
     weights: dict[str, float] = {}
     for snapshot in query.stream():
@@ -143,9 +139,7 @@ def create_batch(
         raise ValueError("sleeve_notional must be a non-negative number")
     summary_md = _require_nonempty_string(batch.get("summary_md"), "summary_md")
     orders = batch.get("orders")
-    if not isinstance(orders, list) or not all(
-        isinstance(order, Mapping) for order in orders
-    ):
+    if not isinstance(orders, list) or not all(isinstance(order, Mapping) for order in orders):
         raise ValueError("orders must be a list of mappings")
 
     document_id = _require_document_id(batch_id or str(uuid4()), "batch_id")

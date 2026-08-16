@@ -9,14 +9,28 @@ on:
 permissions:
   contents: read
 
+env:
+  FIREBASE_PROJECT_ID: demo-pilot-engine
+
 jobs:
   lint-and-ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
@@ -31,6 +45,14 @@ jobs:
 
       - name: Lint
         run: uv run ruff check .
+
+      - name: Test against Firestore emulator
+        run: >-
+          npx -y firebase-tools@latest emulators:exec
+          --only firestore
+          --project demo-pilot-engine
+          --config firebase/firebase.json
+          "uv run pytest"
 
       - name: Run ingestion
         run: uv run python ingest/normalize.py

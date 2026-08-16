@@ -8,5 +8,5 @@
 | `apify` | Apify Capitol Trades Scraper | https://apify.com/ | managed scraper | B | Optional fallback |
 
 Runtime health, timestamps, parser-break alerts, and operational notes belong in
-the Supabase `source_register` table. Reliability grades must be revisited when
-the implementation or upstream source changes.
+the Firestore `source_register` collection. Reliability grades must be revisited
+when the implementation or upstream source changes.

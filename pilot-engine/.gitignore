@@ -6,3 +6,8 @@
 __pycache__/
 *.py[cod]
 .ruff_cache/
+.pytest_cache/
+firebase-debug.log
+firestore-debug.log
+*-service-account*.json
+service-account.json

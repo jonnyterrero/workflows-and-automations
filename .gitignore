@@ -8,6 +8,7 @@ build/
 .env
 .env.*
 !trading-intelligence-agent/.env.example
+!pilot-engine/.env.example
 *.pem
 *.key
 

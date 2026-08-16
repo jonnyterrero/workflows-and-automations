@@ -1,0 +1,43 @@
+name: Pilot Engine ingest
+
+on:
+  pull_request:
+    paths:
+      - "pilot-engine/**"
+      - ".github/workflows/pilot-engine-ingest-daily.yml"
+  schedule:
+    - cron: "17 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: pilot-engine
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: pilot-engine/uv.lock
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync locked dependencies
+        run: uv sync --locked --dev
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Run ingestion
+        run: uv run python ingest/normalize.py

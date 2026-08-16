@@ -10,7 +10,6 @@ from urllib.request import Request, urlopen
 
 import pytest
 
-
 PROJECT_ROOT = Path(__file__).parents[1]
 FIREBASE_DIR = PROJECT_ROOT / "firebase"
 

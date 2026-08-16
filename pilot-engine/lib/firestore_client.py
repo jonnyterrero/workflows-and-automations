@@ -11,7 +11,6 @@ import firebase_admin
 from firebase_admin import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
-
 ALLOWED_BATCH_STATUSES = frozenset(
     {"pending", "approved", "rejected", "executed", "failed"}
 )

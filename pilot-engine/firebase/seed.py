@@ -6,7 +6,6 @@ from typing import Any
 
 from lib.firestore_client import FirestoreClient, get_firestore_client
 
-
 SOURCES: dict[str, dict[str, Any]] = {
     "capitol_trades": {
         "name": "Capitol Trades",

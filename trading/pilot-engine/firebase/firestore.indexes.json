@@ -1,0 +1,47 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "pilot_trades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "pilot",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "filed_date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "pilot_trades",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ticker",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "txn_date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "validation_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "pilot",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "signal_date",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

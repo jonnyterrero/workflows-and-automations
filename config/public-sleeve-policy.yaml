@@ -1,0 +1,255 @@
+# Public.com experimental sleeve — agent operating policy
+#
+# Scope: the Public.com brokerage account ONLY. This sleeve is explicitly
+# experimental. Long-term/retirement capital lives in IRA / 401k / E*Trade,
+# which this agent cannot see and must never reason about as if it could.
+#
+# Authority model: PROPOSE -> HUMAN APPROVES -> AGENT EXECUTES.
+# Approval is per-order and does not carry forward. There is no standing
+# authority to trade.
+
+version: 1
+last_reviewed: 2026-07-31
+
+accounts:
+  tradeable:
+    id: "5OH85517"
+    type: BROKERAGE
+    settlement: CASH          # no margin, no leverage available
+    options_level: LEVEL_2
+  forbidden:
+    - id: "2OG64143"
+      type: HIGH_YIELD
+      reason: "RESTRICTED_NO_TRADING. Agent must never target this account."
+
+# ---------------------------------------------------------------------------
+# Hard limits. A violation is a stop, not a judgment call. If a proposal would
+# breach any of these, the agent does not place it and says why.
+# ---------------------------------------------------------------------------
+hard_limits:
+  max_single_order_usd: 50
+  max_cumulative_deployment_per_session_usd: 100
+  never_exceed: cashOnlyBuyingPower   # cash account; overdraft is not possible, do not try
+  order_types_allowed: [LIMIT]
+  limit_price_max_deviation_from_last_pct: 2.0
+  market_orders: false          # fractional size + thin names = avoidable slippage
+  sessions_allowed: [CORE]      # no extended-hours fills on fractional orders
+
+  prohibited_tools:
+    # Uncapped or unusable-at-this-size risk. Not negotiable without a policy edit.
+    - place_short_order
+    - flatten_and_go_short
+    - place_multileg_order
+    - place_call_credit_spread
+    - place_call_debit_spread
+    - place_put_credit_spread
+    - place_put_debit_spread
+  prohibited_tools_rationale: >-
+    Shorting has unbounded loss and is unavailable in a cash account anyway.
+    Options are nominally permitted at Level 2, but every equity position here
+    is fractional (largest is 0.36 shares) so no call can be covered, and a
+    single contract would exceed the entire sleeve. Treat options as out of
+    scope until the sleeve holds >=100 shares of something.
+
+# ---------------------------------------------------------------------------
+# Crypto: measured friction, not opinion. See execution log 2026-07-21..29.
+# ---------------------------------------------------------------------------
+crypto_rules:
+  measured_round_trip_cost:
+    ETH: 0.041    # ~1.2% in, ~2.9% out
+    LINK: 0.070   # ~1.2% in, ~5.6% out
+  min_expected_move_to_justify_trade_pct: 10.0
+  rationale: >-
+    LINK was bought at 8.326 and sold at 8.301 - a -0.3% price move that cost
+    -7.0% in cash. Spread scales inversely with liquidity. Any crypto proposal
+    must clear the measured round-trip cost for that specific asset before it
+    is worth placing. Majors only; no long-tail tokens at this size.
+  note: >-
+    ETH here is a deliberate concentrated bet in an experimental sleeve, not
+    allocation drift. Do not "rebalance" it toward a generic crypto cap.
+    SOL and BTC were transferred out to an external wallet on 2026-07-29;
+    on-platform crypto holdings may be transient by design.
+
+# ---------------------------------------------------------------------------
+# Automated plans. The agent does NOT own these positions.
+# ---------------------------------------------------------------------------
+automated_plans:
+  detection_rule: >-
+    Multiple identical-notional buys filling within the same second at 13:30 UTC
+    (09:30 ET market open) indicate a scheduled plan, not a discretionary trade.
+  known:
+    - name: "dividend/defensive basket (unconfirmed plan name)"
+      first_observed: 2026-07-27T13:30:01Z
+      notional_per_position_usd: 5.00
+      positions: [SO, PFE, KO, XOM, PM, ABBV, COP, MCD, HD, PEP,
+                  BX, BMY, ABT, MO, VZ, PG, CVX, MDT, AMGN, MRK]
+    - name: "larger thematic batch (user refers to a Pelosi/congress tracker)"
+      first_observed: 2026-07-14T18:39:11Z
+      positions: [PANW, AVGO, GOOGL, CRWD, AMZN, INTC, VST, TEM,
+                  NVDA, AAPL, SCHO, UBER, MSFT]
+      note: >-
+        Filled as 13 sequential buys over ~90 seconds, not sub-second. This may
+        be a one-time allocation rather than a recurring plan. UNCONFIRMED -
+        the API exposes no plan-management endpoint, so this cannot be resolved
+        from data alone. Ask before acting on these.
+  rule: >-
+    NEVER sell a position belonging to an automated plan. Selling does not
+    remove it: the plan rebuys on its next run, and the only durable result is
+    a realized taxable event plus a wash-sale complication. The fix for an
+    unwanted plan position is to edit or pause the plan in the Public app.
+    The agent cannot do this - it must be handed to the user as a UI task.
+
+# ---------------------------------------------------------------------------
+# Execution protocol
+# ---------------------------------------------------------------------------
+execution:
+  required_sequence:
+    - "Re-read portfolio via get_portfolio (never trust a cached snapshot)"
+    - "Run the matching preflight_* tool and show real cost / buying-power impact"
+    - "Present symbol, side, limit price, size, and what would make the trade wrong"
+    - "STOP. Wait for explicit human approval of that specific order."
+    - "Execute, then confirm fill with get_order"
+  approval_scope: single_order
+  approval_does_not_carry_forward: true
+  on_ambiguous_approval: "Treat as not approved. Ask again."
+  forbidden_inference: >-
+    Never infer approval from enthusiasm, from a prior approved trade, from
+    a general strategy discussion, or from silence.
+
+# ---------------------------------------------------------------------------
+# Position sizing sanity
+# ---------------------------------------------------------------------------
+sizing:
+  min_meaningful_position_pct: 1.5
+  rationale: >-
+    At a ~$920 sleeve, a $5 position is 0.54% of the book. A 10% move in it
+    shifts the portfolio 0.05% - indistinguishable from noise, while still
+    costing attention and a tax lot. Do not propose new positions below the
+    minimum. Flag existing sub-threshold positions as plan artifacts, not as
+    decisions to defend.
+
+# ---------------------------------------------------------------------------
+# Monitoring brief
+# ---------------------------------------------------------------------------
+monitoring:
+  cadence: "Weekly, Monday pre-market"
+  mode: READ_ONLY          # the scheduled brief never places orders
+  report:
+    - "Allocation: cash / crypto / equity, and drift vs last week"
+    - "Positions beyond +/-15% from cost basis, with the reason if findable"
+    - "Earnings dates inside the next 10 days for held names"
+    - "News/catalysts on held names via WebSearch, with cited URLs"
+    - "New sub-second fills = an automated plan ran; report, do not act"
+  news_source: WebSearch
+  news_source_note: >-
+    Routines can only attach claude.ai MCP connectors. Perplexity is available
+    in interactive Claude Code sessions but has no connector entry, so the
+    scheduled brief uses the built-in WebSearch tool instead. Use Perplexity
+    when working interactively; do not write it into routine prompts.
+  routine:
+    id: trig_01CD9msSCZ6aiRPT9JkFj9mD
+    schedule: "0 12 * * 1"   # Monday 08:00 ET (12:00 UTC during EDT)
+    connectors: [Public-Bot]
+    self_contained: true
+    self_contained_note: >-
+      CONFIRMED by the validation run on 2026-07-31: the routine has no git
+      source attached and its fired session did NOT find this file on disk.
+      It ran from the inlined rules and produced a correct brief. The critical
+      rules (costBasis-only performance, automated-plan handling, measured
+      crypto friction, experimental-sleeve framing) are duplicated inline in
+      the routine prompt for exactly this reason.
+      THIS MEANS THE RULES LIVE IN TWO PLACES AND CAN DRIFT. If you change a
+      rule here, change it in the routine prompt too. To remove the
+      duplication, attach this repo as a source on the routine in the
+      claude.ai/code/routines UI - the create/update trigger API does not
+      expose a sources parameter, so it cannot be done from a session.
+  validation_run:
+    date: 2026-07-31
+    fired: manually, off-schedule
+    public_mcp_tools: PASS
+    websearch: PASS
+    policy_file_found: false
+    trades_placed: none
+    notes: >-
+      Spawned a research subagent for the move explanations and earnings
+      check. Correctly identified the 2026-07-27 plan fill as automated and
+      did not propose selling those positions.
+  data_quality_warning: >-
+    The instrumentGain and positionDailyGain fields from get_portfolio are
+    unreliable - they report identical percentages for both fields and have
+    shown implausible same-day moves (MSFT +14.8% / AAPL -7.7% simultaneously).
+    Compute performance from costBasis only.
+
+# ---------------------------------------------------------------------------
+# agent-team integration (see agents/agent-team/skills/trading-agent/SKILL.md)
+# ---------------------------------------------------------------------------
+agent_team_integration:
+  deployment_status: NOT_DEPLOYED
+  deployment_note: >-
+    As of 2026-07-31 no Managed Agents have been created (agents/agent-team/
+    DEPLOYMENT_STATUS.md: "Upload / agent creation - NOT DONE"). The
+    specialist templates are definitions, not live agents. Nothing below is
+    active until deploy_agents.py runs with a real API key.
+
+  # The single most common way to get this wrong.
+  surface_map:
+    claude_code_session: >-
+      What we use now. Public MCP is attached here as a claude.ai connector.
+      This is where the weekly routine runs.
+    managed_agents: >-
+      Created via deploy_agents.py through the API. A claude.ai connector does
+      NOT attach to these - the MCP must be configured on the agent definition
+      in Console, separately. The Public connector does not reach them.
+    okx_local_mcp: >-
+      okx-trade-mcp runs as a local stdio process on the operator's machine.
+      It is not a claude.ai connector, so it reaches neither the routine nor
+      the Managed Agents. Interactive local sessions only.
+
+  # trading-agent SKILL.md requires all four simultaneously for
+  # execute_supervised. Two are satisfiable from this file; two are not.
+  execute_supervised_gate:
+    connected_broker_tool: "SATISFIED on the Claude Code surface (Public MCP)"
+    per_order_confirmation: "SATISFIED - see execution.approval_scope above"
+    configured_risk_limits: "See risk_limits below. MUST be restated in-session."
+    session_enable_phrase: >-
+      NOT SATISFIABLE FROM A FILE, BY DESIGN. The skill refuses to reuse a
+      prior session's enable phrase. Do not attempt to encode one here.
+
+  # These are DEFAULTS TO PROPOSE, not standing authorization.
+  # trading-agent SKILL.md: "Refuse to raise, ignore, or silently reuse a
+  # prior session's risk limits or enable phrase; both are scoped to the
+  # current session only." A limit written in this file therefore does NOT
+  # satisfy the gate - the operator must restate it in the live session.
+  # This file exists so the operator does not have to reinvent the numbers,
+  # not so the agent can skip asking for them.
+  risk_limits:
+    binding: false
+    must_be_restated_in_session: true
+    max_position_size_usd: 50      # ~5% of a ~$920 sleeve
+    max_daily_loss_usd: 30         # ~3.3% of sleeve
+    max_open_risk_usd: 100         # ~11% of sleeve at risk across all positions
+    basis: "Sized against a ~$920 sleeve as of 2026-07-31. Revisit if the sleeve changes materially."
+
+  # trading-agent SKILL.md: "never assume a venue, custody model, or
+  # settlement mechanism the user has not stated."
+  venue_facts:
+    venue: "Public.com"
+    custody: "Broker-held (Public); crypto is custodial on-platform"
+    settlement: "Cash account. No margin, no leverage, no shorting."
+    fractional: "Yes - all equity positions are fractional (largest 0.36 sh)"
+    crypto_note: "SOL and BTC were transferred off-platform 2026-07-29; on-platform crypto may be transient"
+
+  routing:
+    allocation_and_concentration: investment-portfolio-agent
+    tactical_entry_exit: trading-agent
+    liquidity_as_constraint: cpa-cfo-agent
+    note: >-
+      Per docs/ROUTING_MATRIX.md, Portfolio checks Trading tickets against
+      policy rather than re-pricing them, and CFO liquidity output feeds
+      allocation as a constraint, not a recommendation. This file is the
+      "stated strategic allocation policy" those cross-checks refer to.
+
+disclaimers:
+  - "This agent produces decision support, not financial advice."
+  - "It is not a fiduciary and has no view of tax situation, income, or goals."
+  - "Every order requires a human decision. There is no autonomous trading."

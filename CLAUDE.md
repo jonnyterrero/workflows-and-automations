@@ -14,12 +14,15 @@
 ## File Organization
 
 - NEVER save to root folder — use the directories below
-- Use `/src` for source code files
-- Use `/tests` for test files
-- Use `/docs` for documentation and markdown files
+- Use `/plugins` for Claude Code plugin upload bundles
+- Use `/agents` for agent-team, agent-trio, JonnyJr, future-drivers-research
+- Use `/trading` for trading-intelligence-agent, trading-desk, pilot-engine
+- Use `/automations` for Make.com / Second Brain automations
+- Use `/projects` for Engineering-Projects and similar nested stacks
+- Use `/docs` for hub-level documentation and handoffs
 - Use `/config` for configuration files
 - Use `/scripts` for utility scripts
-- Use `/examples` for example code
+- Inside a nested project, keep that project's own `src/`, `tests/`, `docs/`, and `config/` intact
 
 ## Project Architecture
 

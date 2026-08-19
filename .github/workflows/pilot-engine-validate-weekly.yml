@@ -1,0 +1,36 @@
+name: Pilot Engine validation
+
+on:
+  schedule:
+    - cron: "43 10 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: trading/pilot-engine
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: trading/pilot-engine/uv.lock
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync locked dependencies
+        run: uv sync --locked
+
+      - name: Run validation stub
+        run: uv run python validate/autopilot_diff.py

@@ -298,9 +298,16 @@ detect_channel() {
   # fallbackToSession=true is the documented troubleshooting escape hatch:
   # skip external channels entirely and go straight to session, even if a
   # (possibly still-misconfigured) external channel looks ready.
-  local fallback_session
+  # fallbackToSession is documented and shipped in both the shared config
+  # (config.json) and the platform config (platform.json, e.g. Claude
+  # Code's claude-code.default.json) — either one setting it true forces
+  # session mode.
+  local fallback_session fallback_session_platform
   fallback_session=$(cfg '.notify.fallbackToSession' 'false')
-  [[ "$fallback_session" == "true" ]] && { echo session; return; }
+  fallback_session_platform=$(jq -r '.notify.fallbackToSession // false' "$PLATFORM_FILE" 2>/dev/null)
+  if [[ "$fallback_session" == "true" || "$fallback_session_platform" == "true" ]]; then
+    echo session; return
+  fi
 
   local tg_token_env tg_chat_env lark
   tg_token_env=$(jq -r '.notify.telegram.bot_token_env // "TELEGRAM_BOT_TOKEN"' "$PLATFORM_FILE" 2>/dev/null)

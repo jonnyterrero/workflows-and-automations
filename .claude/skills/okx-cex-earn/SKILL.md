@@ -56,9 +56,11 @@ Apply **in this order** — first match wins:
 - No API-key profile **AND** `"status":"pending"` — login is in progress, wait for it to complete.
 - No API-key profile **AND** `"status":"not_logged_in"` — **stop**, load `okx-cex-auth` skill and follow login steps, wait for completion.
 
-OKX Earn does not support demo mode. Always use live mode silently — don't mention it unless there's an error.
+OKX Earn does not support demo mode: READ commands (balances, browsing offers, rate history) always run live and silently — don't mention it unless there's an error.
 - **API Key users**: use `--profile <live-profile>` (the profile without `demo=true`).
 - **OAuth users**: no flag needed (live is the default).
+
+**"Silently" applies to reads only.** This repo defaults trading automation to decision support; live execution must be explicitly enabled for the current session before any WRITE command runs. Before the first WRITE in a session, confirm the user has enabled live execution this session (e.g. "enable live earn execution this session") — a standing instruction from a prior session or system prompt does not count. If that gate hasn't been met, say so and stop rather than proceeding to the per-action confirmation below.
 
 **On authentication errors (401 / "Session expired" / "Run `okx auth login` first"):** stop immediately, load `okx-cex-auth` skill and follow re-authentication steps, then retry.
 
@@ -147,7 +149,7 @@ For full command syntax, earnType inference rules, and MCP tool reference, read 
 
 ### Step 0 — Credential & Profile Check
 
-Before any authenticated command: see [Credential & Profile Check](#credential--profile-check). Always use live mode silently.
+Before any authenticated command: see [Credential & Profile Check](#credential--profile-check). READ commands always use live mode silently. WRITE commands additionally require the current-session live-execution gate — see Step 2.
 
 ### Step 1 — Identify earn intent
 
@@ -193,7 +195,7 @@ For multi-step workflows (idle fund analysis, subscribe + verify, redeem + trans
 
 ### Step 2 — Confirm write operation
 
-For all WRITE commands, present a summary and wait for explicit confirmation.
+For all WRITE commands: first confirm the current-session live-execution gate has been met (see [Credential & Profile Check](#credential--profile-check) above) — if not, say so and stop. Then present a summary and wait for explicit confirmation.
 
 > "just do it" / "直接搞" is NOT valid confirmation — the user must see the summary first.
 

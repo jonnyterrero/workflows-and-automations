@@ -221,8 +221,15 @@ fetch_fixed() {
   local rc=$?
   # Fallback: fixed-products unavailable (CLI <1.3.3) → rate-history.fixedOffers
   if [[ $rc -ne 0 || -z "$out" ]] || ! echo "$out" | jq -e 'type=="array"' >/dev/null 2>&1; then
-    local rh
+    local rh rh_rc
     rh=$(retry_cmd okx "${PROFILE_ARGS[@]+"${PROFILE_ARGS[@]}"}" earn savings rate-history --limit 1 --json)
+    rh_rc=$?
+    if [[ $rh_rc -ne 0 ]]; then
+      # Fallback command itself failed — propagate its error text rather than
+      # masking a total outage as an empty (successful-looking) result.
+      printf '%s' "$rh"
+      return 1
+    fi
     out=$(echo "$rh" | jq -c '.fixedOffers // []' 2>/dev/null)
     [[ -z "$out" ]] && out="[]"
   fi
@@ -239,13 +246,21 @@ fetch_flexible() {
   if [[ "$ccys" == '"all"' || "$ccys" == '[]' ]]; then
     ccys='["USDT","USDC"]'
   fi
-  local ccy_list
+  local ccy_list attempted=0 failed=0
   ccy_list=$(echo "$ccys" | jq -r '.[]' 2>/dev/null)
   while IFS= read -r ccy; do
     [[ -z "$ccy" ]] && continue
-    local out
+    attempted=$((attempted+1))
+    local out rc
     out=$(retry_cmd okx "${PROFILE_ARGS[@]+"${PROFILE_ARGS[@]}"}" earn savings rate-history --ccy "$ccy" --limit 1 --json)
-    if [[ $? -eq 0 ]] && echo "$out" | jq -e '.data[0]' >/dev/null 2>&1; then
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+      # Command itself failed (retries exhausted) — distinct from a
+      # successful call with no data for this currency.
+      failed=$((failed+1))
+      continue
+    fi
+    if echo "$out" | jq -e '.data[0]' >/dev/null 2>&1; then
       local rate
       rate=$(echo "$out" | jq -r '.data[0].lendingRate // ""' 2>/dev/null)
       if [[ -n "$rate" && "$rate" != "null" ]]; then
@@ -254,6 +269,12 @@ fetch_flexible() {
     fi
   done <<< "$ccy_list"
   printf '%s' "$result"
+  # 0 = all attempted currencies fetched cleanly
+  # 1 = partial failure (some currencies fetched, some didn't)
+  # 2 = total failure (every currency failed — treat as a feed outage)
+  if [[ $failed -eq 0 ]]; then return 0; fi
+  if [[ $attempted -gt 0 && $failed -eq $attempted ]]; then return 2; fi
+  return 1
 }
 
 # ---------------------------------------------------------------------------
@@ -274,6 +295,20 @@ detect_channel() {
   ch=$(jq -r '.notify.channel // "auto"' "$PLATFORM_FILE" 2>/dev/null)
   [[ -z "$ch" || "$ch" == "null" ]] && ch="auto"
 
+  # fallbackToSession=true is the documented troubleshooting escape hatch:
+  # skip external channels entirely and go straight to session, even if a
+  # (possibly still-misconfigured) external channel looks ready.
+  # fallbackToSession is documented and shipped in both the shared config
+  # (config.json) and the platform config (platform.json, e.g. Claude
+  # Code's claude-code.default.json) — either one setting it true forces
+  # session mode.
+  local fallback_session fallback_session_platform
+  fallback_session=$(cfg '.notify.fallbackToSession' 'false')
+  fallback_session_platform=$(jq -r '.notify.fallbackToSession // false' "$PLATFORM_FILE" 2>/dev/null)
+  if [[ "$fallback_session" == "true" || "$fallback_session_platform" == "true" ]]; then
+    echo session; return
+  fi
+
   local tg_token_env tg_chat_env lark
   tg_token_env=$(jq -r '.notify.telegram.bot_token_env // "TELEGRAM_BOT_TOKEN"' "$PLATFORM_FILE" 2>/dev/null)
   tg_chat_env=$(jq -r '.notify.telegram.chat_id_env // "TELEGRAM_CHAT_ID"' "$PLATFORM_FILE" 2>/dev/null)
@@ -292,10 +327,10 @@ detect_channel() {
     lark)     [[ $lark_ready -eq 1 ]] && { echo lark; return; } ;;
     session)  echo session; return ;;
   esac
-  # auto / fell through
+  # auto / fell through (fallback_session already handled above)
   if [[ $tg_ready -eq 1 ]]; then echo telegram; return; fi
   if [[ $lark_ready -eq 1 ]]; then echo lark; return; fi
-  echo session
+  echo none
 }
 
 send_telegram() {
@@ -377,6 +412,7 @@ dispatch() {
   local title="$1" body="$2" color="$3" detail="$4"
   local channel
   channel=$(detect_channel)
+  LAST_DISPATCH_CHANNEL="$channel"
   local full
   full="$(printf '%s\n\n%s' "$title" "$body")"
   case "$channel" in
@@ -420,10 +456,15 @@ record_failure() {
       title="🚨 Earn Hunter · 连续 3 轮扫描失败"
       body=$(printf '最近 3 次扫描均未成功完成。\n\n🔍 最后一次错误：\n   %s\n\n🛠 排查建议：\n   1. 检查网络连接\n   2. 运行 `okx auth login` 确认凭证有效\n   3. 运行 `okx earn flash-earn projects --json` 手动测试 API\n   4. 检查日志: cat ~/.okx/earn-hunter/cron.log' "$err_display")
     fi
-    dispatch "$title" "$body" "red" "error:consecutive_failures"
-    # Reset after alerting.
-    tmp=$(jq '.consecutive_failures=0' "$STATE_FILE" 2>/dev/null)
-    [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+    if dispatch "$title" "$body" "red" "error:consecutive_failures"; then
+      # Reset only once the alert actually delivered — otherwise a
+      # persistent outage that also can't notify goes silent forever
+      # instead of re-alerting on the next scan.
+      tmp=$(jq '.consecutive_failures=0' "$STATE_FILE" 2>/dev/null)
+      [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+    else
+      return 1
+    fi
   fi
 }
 
@@ -453,8 +494,7 @@ resolve_lang
 
 # Forced-failure test hook
 if [[ "${EH_FORCE_FAIL:-0}" == "1" ]]; then
-  record_failure "forced failure (EH_FORCE_FAIL)"
-  exit 0
+  if record_failure "forced failure (EH_FORCE_FAIL)"; then exit 0; else exit 1; fi
 fi
 
 FLASH_ENABLED=$(cfg '.flash.enabled' 'true')
@@ -475,17 +515,21 @@ FLEX_RAW="[]"
 SCAN_ERR=""
 FEEDS_ENABLED=0
 FEEDS_FAILED=0
+FLASH_OK=1
+FIXED_OK=1
+FLEX_OK=1
 
 if [[ "$FLASH_ENABLED" == "true" ]]; then
   FEEDS_ENABLED=$((FEEDS_ENABLED+1))
   FLASH_RAW=$(fetch_flash)
   if ! echo "$FLASH_RAW" | jq -e 'type=="array"' >/dev/null 2>&1; then
     if is_auth_error "$FLASH_RAW"; then
-      alert_auth; exit 0
+      if alert_auth; then exit 0; else exit 1; fi
     fi
     SCAN_ERR="flash fetch failed: $(printf '%s' "$FLASH_RAW" | head -c 120)"
     FLASH_RAW="[]"
     FEEDS_FAILED=$((FEEDS_FAILED+1))
+    FLASH_OK=0
   fi
 fi
 
@@ -494,32 +538,46 @@ if [[ "$FIXED_ENABLED" == "true" ]]; then
   FIXED_RAW=$(fetch_fixed)
   if ! echo "$FIXED_RAW" | jq -e 'type=="array"' >/dev/null 2>&1; then
     if is_auth_error "$FIXED_RAW"; then
-      alert_auth; exit 0
+      if alert_auth; then exit 0; else exit 1; fi
     fi
     SCAN_ERR="${SCAN_ERR:+$SCAN_ERR; }fixed fetch failed: $(printf '%s' "$FIXED_RAW" | head -c 120)"
     FIXED_RAW="[]"
     FEEDS_FAILED=$((FEEDS_FAILED+1))
+    FIXED_OK=0
   fi
 fi
 
 if [[ "$FLEX_ENABLED" == "true" ]]; then
   FEEDS_ENABLED=$((FEEDS_ENABLED+1))
   FLEX_RAW=$(fetch_flexible)
+  FLEX_RC=$?
   if ! echo "$FLEX_RAW" | jq -e 'type=="array"' >/dev/null 2>&1; then
     if is_auth_error "$FLEX_RAW"; then
-      alert_auth; exit 0
+      if alert_auth; then exit 0; else exit 1; fi
     fi
     SCAN_ERR="${SCAN_ERR:+$SCAN_ERR; }flexible fetch failed: $(printf '%s' "$FLEX_RAW" | head -c 120)"
     FLEX_RAW="[]"
     FEEDS_FAILED=$((FEEDS_FAILED+1))
+    FLEX_OK=0
+  elif [[ "$FLEX_RC" -eq 2 ]]; then
+    # Every configured currency failed — a real feed outage, not a partial
+    # gap. Count it like the other feeds' total-failure path.
+    SCAN_ERR="${SCAN_ERR:+$SCAN_ERR; }flexible fetch failed: all currencies exhausted retries"
+    FLEX_RAW="[]"
+    FEEDS_FAILED=$((FEEDS_FAILED+1))
+    FLEX_OK=0
+  elif [[ "$FLEX_RC" -ne 0 ]]; then
+    # Valid partial array — some currencies fetched, some didn't. Still use
+    # what we have for this scan, but don't let dedup diff-cleanup treat
+    # the missing currencies as "no longer qualifying".
+    FLEX_OK=0
   fi
 fi
 
 # Only count as scan failure if ALL enabled feeds failed.
 # Partial failure → continue with the feeds that succeeded.
 if [[ "$FEEDS_FAILED" -gt 0 && "$FEEDS_FAILED" -ge "$FEEDS_ENABLED" ]]; then
-  record_failure "$SCAN_ERR"
-  exit 0
+  if record_failure "$SCAN_ERR"; then exit 0; else exit 1; fi
 fi
 
 # ---- Step 3: filters (jq) ----
@@ -717,6 +775,21 @@ elif [[ "$N_FLEX_NEW" -gt 0 ]]; then
   if dispatch "$title" "$body" "orange" "flex:${N_FLEX_NEW}"; then DELIVERED=1; fi
 fi
 
+# New opportunities existed but nothing got delivered — don't let this look
+# like a clean, empty scan to cron or an interactive caller. Report the
+# actual cause: either no channel was ready (and session fallback is off),
+# or a channel was selected but its send failed (see notify.log for the
+# recorded API response).
+DELIVERY_FAILED=0
+if [[ "$SECTION_COUNT" -gt 0 && "$DELIVERED" != "1" ]]; then
+  DELIVERY_FAILED=1
+  if [[ -z "${LAST_DISPATCH_CHANNEL:-}" || "$LAST_DISPATCH_CHANNEL" == "none" ]]; then
+    echo "earn-hunter: found new opportunities but delivery failed (no channel ready; fallbackToSession disabled)" >&2
+  else
+    echo "earn-hunter: found new opportunities but delivery via '${LAST_DISPATCH_CHANNEL}' failed — see notify.log for the channel's response" >&2
+  fi
+fi
+
 # ---- Step 6: commit dedup keys (only for delivered notifications) ----
 NOW="$(now_iso)"
 if [[ "$DELIVERED" == "1" ]]; then
@@ -741,43 +814,52 @@ if [[ "$DELIVERED" == "1" ]]; then
 fi
 
 # ---- Step 6a/6b: diff cleanup (skip test: keys) ----
+# Only clean up a feed's dedup keys once we know its current membership —
+# a failed fetch normalizes RAW/FILTERED to "[]", which would otherwise read
+# as "nothing is active any more" and wipe every dedup key for that feed.
 # Flash: ID-level. Keep keys whose id is still present in raw flash_results.
-CURRENT_FLASH_IDS=$(echo "$FLASH_RAW" | jq -c '[ .[] | (.id|tostring) ]' 2>/dev/null); [[ -z "$CURRENT_FLASH_IDS" ]] && CURRENT_FLASH_IDS="[]"
-tmp=$(jq --argjson ids "$CURRENT_FLASH_IDS" '
-  .flash = ( .flash | with_entries(
-    select(
-      (.key|startswith("test:"))
-      or ( ( .key | sub("^test:";"") | split(":")[0] ) as $id | ($ids | index($id)) )
-    )
-  ) )
-' "$STATE_FILE" 2>/dev/null)
-[[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+if [[ "$FLASH_OK" == "1" ]]; then
+  CURRENT_FLASH_IDS=$(echo "$FLASH_RAW" | jq -c '[ .[] | (.id|tostring) ]' 2>/dev/null); [[ -z "$CURRENT_FLASH_IDS" ]] && CURRENT_FLASH_IDS="[]"
+  tmp=$(jq --argjson ids "$CURRENT_FLASH_IDS" '
+    .flash = ( .flash | with_entries(
+      select(
+        (.key|startswith("test:"))
+        or ( ( .key | sub("^test:";"") | split(":")[0] ) as $id | ($ids | index($id)) )
+      )
+    ) )
+  ' "$STATE_FILE" 2>/dev/null)
+  [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+fi
 
 # Fixed: key-level. current_fixed_keys = raw offers not soldOut and lendQuota>0.
-CURRENT_FIXED_KEYS=$(echo "$FIXED_RAW" | jq -c '
-  [ .[] | select(.soldOut != true) | select(((.lendQuota // "")|tostring) != "" and ((.lendQuota|tonumber?)//0) > 0)
-    | (.ccy + ":" + .term + ":" + (.rate|tostring)) ]
-' 2>/dev/null); [[ -z "$CURRENT_FIXED_KEYS" ]] && CURRENT_FIXED_KEYS="[]"
-tmp=$(jq --argjson keys "$CURRENT_FIXED_KEYS" '
-  .fixed = ( .fixed | with_entries(
-    select(
-      (.key|startswith("test:"))
-      or ( ( .key | sub("^test:";"") ) as $k | ($keys | index($k)) )
-    )
-  ) )
-' "$STATE_FILE" 2>/dev/null)
-[[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+if [[ "$FIXED_OK" == "1" ]]; then
+  CURRENT_FIXED_KEYS=$(echo "$FIXED_RAW" | jq -c '
+    [ .[] | select(.soldOut != true) | select(((.lendQuota // "")|tostring) != "" and ((.lendQuota|tonumber?)//0) > 0)
+      | (.ccy + ":" + .term + ":" + (.rate|tostring)) ]
+  ' 2>/dev/null); [[ -z "$CURRENT_FIXED_KEYS" ]] && CURRENT_FIXED_KEYS="[]"
+  tmp=$(jq --argjson keys "$CURRENT_FIXED_KEYS" '
+    .fixed = ( .fixed | with_entries(
+      select(
+        (.key|startswith("test:"))
+        or ( ( .key | sub("^test:";"") ) as $k | ($keys | index($k)) )
+      )
+    ) )
+  ' "$STATE_FILE" 2>/dev/null)
+  [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+fi
 
 # Flexible: key-level. Keep keys whose ccy is still above threshold (in FLEX_FILTERED).
-CURRENT_FLEX_KEYS=$(echo "$FLEX_FILTERED" | jq -c '[ .[] | .ccy ]' 2>/dev/null); [[ -z "$CURRENT_FLEX_KEYS" ]] && CURRENT_FLEX_KEYS="[]"
-tmp=$(jq --argjson keys "$CURRENT_FLEX_KEYS" '
-  .flexible = ( .flexible | with_entries(
-    select(
-      ( .key | sub("^test:";"") ) as $k | ($keys | index($k))
-    )
-  ) )
-' "$STATE_FILE" 2>/dev/null)
-[[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+if [[ "$FLEX_OK" == "1" ]]; then
+  CURRENT_FLEX_KEYS=$(echo "$FLEX_FILTERED" | jq -c '[ .[] | .ccy ]' 2>/dev/null); [[ -z "$CURRENT_FLEX_KEYS" ]] && CURRENT_FLEX_KEYS="[]"
+  tmp=$(jq --argjson keys "$CURRENT_FLEX_KEYS" '
+    .flexible = ( .flexible | with_entries(
+      select(
+        ( .key | sub("^test:";"") ) as $k | ($keys | index($k))
+      )
+    ) )
+  ' "$STATE_FILE" 2>/dev/null)
+  [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+fi
 
 # ---- Step 6c: TTL cleanup (7 days) ----
 # Compute cutoff epoch. notifiedAt parsed via jq fromdateiso8601 best-effort.
@@ -804,10 +886,16 @@ if [[ "$N_FLASH_NEW" -eq 0 && "$N_FIXED_NEW" -eq 0 && "$N_FLEX_NEW" -eq 0 ]]; th
   if [[ "$VERBOSE" == "true" ]]; then
     # shellcheck disable=SC2059
     msg=$(printf "$(t verbose_status)" "$N_FLASH_FILT" "$N_FIXED_FILT" "$N_FLEX_FILT")
-    dispatch "Earn Hunter" "$msg" "grey" "verbose:no_new"
+    if ! dispatch "Earn Hunter" "$msg" "grey" "verbose:no_new"; then
+      # verboseLog is used as the activation smoke test for end-to-end
+      # delivery — a failed send here must not look like a clean run.
+      echo "earn-hunter: verbose status failed to deliver — see notify.log for the channel's response" >&2
+      exit 1
+    fi
   fi
   # else: SILENT. No output, exit 0.
   exit 0
 fi
 
+[[ "$DELIVERY_FAILED" == "1" ]] && exit 1
 exit 0

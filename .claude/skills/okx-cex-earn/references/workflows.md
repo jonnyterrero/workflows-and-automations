@@ -241,12 +241,12 @@ Set up a recurring task (every 4 hours) that checks for available fixed-term off
    ⚠️ Note: Moving funds from the trading account requires **Withdraw** permission on the API key. If your key lacks this permission, you'll need to transfer manually in the OKX app.
    ```
 
-6. Wait for user confirmation (amount, term selection)
+6. Wait for user confirmation (amount, term selection). This confirms the subscription itself, not any fund movement below — each of steps 7 and 8 is a separate live mutation and needs its own confirmation immediately before it runs.
 7. _(Optional — requires **Withdraw** permission on the API key)_
-   If funds are in trading account → `okx --profile live account transfer --ccy <ccy> --amt <amt> --from 18 --to 6` (trading→funding)
+   If funds are in trading account → show the exact transfer (ccy, amount, trading→funding) and wait for explicit confirmation, then `okx --profile live account transfer --ccy <ccy> --amt <amt> --from 18 --to 6`
 
    If transfer fails with a permission error, inform the user that their API key does not have Withdraw permission and they should complete the transfer manually in the OKX app.
-8. If funds are in simple earn → `okx --profile live earn savings redeem --ccy <ccy> --amt <amt>` (redeem first, funds return to funding account)
+8. If funds are in simple earn → show the exact redemption (ccy, amount, source: Simple Earn) and wait for explicit confirmation, then `okx --profile live earn savings redeem --ccy <ccy> --amt <amt>` (redeem first, funds return to funding account)
 9. `okx --profile live earn savings fixed-purchase --ccy <ccy> --amt <amt> --term <term> --json` → preview
 10. Show fixed-term confirmation (see `savings-commands.md` Fixed-Term Confirmation Templates), wait for final confirmation
 11. `okx --profile live earn savings fixed-purchase --ccy <ccy> --amt <amt> --term <term> --confirm --json`

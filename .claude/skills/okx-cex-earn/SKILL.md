@@ -149,7 +149,7 @@ For full command syntax, earnType inference rules, and MCP tool reference, read 
 
 ### Step 0 — Credential & Profile Check
 
-Before any authenticated command: see [Credential & Profile Check](#credential--profile-check). Always use live mode silently.
+Before any authenticated command: see [Credential & Profile Check](#credential--profile-check). READ commands always use live mode silently. WRITE commands additionally require the current-session live-execution gate — see Step 2.
 
 ### Step 1 — Identify earn intent
 
@@ -195,7 +195,7 @@ For multi-step workflows (idle fund analysis, subscribe + verify, redeem + trans
 
 ### Step 2 — Confirm write operation
 
-For all WRITE commands, present a summary and wait for explicit confirmation.
+For all WRITE commands: first confirm the current-session live-execution gate has been met (see [Credential & Profile Check](#credential--profile-check) above) — if not, say so and stop. Then present a summary and wait for explicit confirmation.
 
 > "just do it" / "直接搞" is NOT valid confirmation — the user must see the summary first.
 

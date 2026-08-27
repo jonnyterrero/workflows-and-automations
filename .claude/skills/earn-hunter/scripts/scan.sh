@@ -295,7 +295,7 @@ detect_channel() {
   if [[ "$lark" == https://* && "$lark" == *"/hook/"* ]]; then lark_ready=1; fi
 
   local fallback_session
-  fallback_session=$(jq -r '.notify.fallbackToSession // false' "$PLATFORM_FILE" 2>/dev/null)
+  fallback_session=$(cfg '.notify.fallbackToSession' 'false')
 
   case "$ch" in
     telegram) [[ $tg_ready -eq 1 ]] && { echo telegram; return; } ;;
@@ -734,6 +734,15 @@ elif [[ "$N_FLEX_NEW" -gt 0 ]]; then
   if dispatch "$title" "$body" "orange" "flex:${N_FLEX_NEW}"; then DELIVERED=1; fi
 fi
 
+# New opportunities existed but nothing got delivered (e.g. no channel ready
+# and session fallback disabled) — don't let this look like a clean, empty
+# scan to cron or an interactive caller.
+DELIVERY_FAILED=0
+if [[ "$SECTION_COUNT" -gt 0 && "$DELIVERED" != "1" ]]; then
+  DELIVERY_FAILED=1
+  echo "earn-hunter: found new opportunities but delivery failed (no channel ready; fallbackToSession disabled)" >&2
+fi
+
 # ---- Step 6: commit dedup keys (only for delivered notifications) ----
 NOW="$(now_iso)"
 if [[ "$DELIVERED" == "1" ]]; then
@@ -836,4 +845,5 @@ if [[ "$N_FLASH_NEW" -eq 0 && "$N_FIXED_NEW" -eq 0 && "$N_FLEX_NEW" -eq 0 ]]; th
   exit 0
 fi
 
+[[ "$DELIVERY_FAILED" == "1" ]] && exit 1
 exit 0

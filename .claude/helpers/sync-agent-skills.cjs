@@ -2,7 +2,7 @@
 /**
  * Sync the canonical agent-team skills into the project skill directory.
  *
- * agent-team/skills/<name>/SKILL.md is the source of truth; .claude/skills/ is
+ * agents/agent-team/skills/<name>/SKILL.md is the source of truth; .claude/skills/ is
  * what Claude Code actually discovers at session start. This copies the former
  * onto the latter so a session always loads the committed version rather than
  * whatever an installer left on one machine.
@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
-const SRC = path.join(REPO_ROOT, 'agent-team', 'skills');
+const SRC = path.join(REPO_ROOT, 'agents', 'agent-team', 'skills');
 const DEST = path.join(REPO_ROOT, '.claude', 'skills');
 
 function walk(dir) {
@@ -29,7 +29,7 @@ function walk(dir) {
 
 function main() {
   if (!fs.existsSync(SRC)) {
-    console.log('[agent-skills] no agent-team/skills directory — nothing to sync');
+    console.log('[agent-skills] no agents/agent-team/skills directory — nothing to sync');
     return;
   }
 

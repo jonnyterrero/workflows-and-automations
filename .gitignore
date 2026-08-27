@@ -7,9 +7,12 @@ build/
 # Secrets
 .env
 .env.*
-!trading-intelligence-agent/.env.example
+!trading/trading-intelligence-agent/.env.example
+!trading/pilot-engine/.env.example
+!agents/JonnyJr/.env.example
 *.pem
 *.key
+.claude/settings.local.json
 
 # OS
 .DS_Store
@@ -27,8 +30,8 @@ Thumbs.db
 /claude-mem-plugin-slim/
 
 # Agent-team Anthropic workspace IDs (per-machine)
-agent-team/dist/skill_ids.json
-agent-team/dist/agent_ids.json
+agents/agent-team/dist/skill_ids.json
+agents/agent-team/dist/agent_ids.json
 
 # Python
 __pycache__/
@@ -37,3 +40,18 @@ __pycache__/
 # Per-session hook state (session-restore, routing, pending insights)
 .claude-flow/
 
+# Content-engine activity digests (regenerable; drafts under runs/ are kept)
+.claude/skills/content-engine/.cache/
+
+# Content-production media. Manifests and upload metadata stay in git; blobs do not.
+automations/content-engine/runs/**/assets/
+automations/content-engine/runs/**/.work/
+automations/content-engine/runs/**/*.mp4
+automations/content-engine/runs/**/*.mp3
+automations/content-engine/runs/**/*.wav
+automations/content-engine/runs/**/*.srt
+automations/content-engine/runs/**/*.ass
+
+# YouTube OAuth artifacts - credentials, never commit
+**/client_secret*.json
+**/youtube-token.json

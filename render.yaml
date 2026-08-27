@@ -2,7 +2,7 @@ services:
   - type: web
     name: trading-intelligence-api
     runtime: python
-    rootDir: trading-intelligence-agent
+    rootDir: trading/trading-intelligence-agent
     plan: starter
     region: oregon
     buildCommand: pip install -e .
@@ -19,7 +19,7 @@ services:
   - type: cron
     name: trading-intelligence-daily
     runtime: python
-    rootDir: trading-intelligence-agent
+    rootDir: trading/trading-intelligence-agent
     plan: starter
     region: oregon
     schedule: "0 10 * * *"
@@ -35,7 +35,7 @@ services:
   - type: cron
     name: trading-intelligence-research
     runtime: python
-    rootDir: trading-intelligence-agent
+    rootDir: trading/trading-intelligence-agent
     plan: starter
     region: oregon
     schedule: "30 10 * * *"

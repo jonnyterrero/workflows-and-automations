@@ -3,7 +3,7 @@
 Personal automation hub for Claude Code, MCP integrations, plugins, research tooling, and the **Obsidian Second Brain** — a system that lets Claude use your Obsidian vault as persistent memory across sessions.
 
 **Repo:** [jonnyterrero/workflows-and-automations](https://github.com/jonnyterrero/workflows-and-automations)  
-**Nested AI helper:** [`JonnyJr/`](./JonnyJr) (in-tree; standalone repo retired)
+**Nested AI helper:** [`agents/JonnyJr/`](./agents/JonnyJr) (in-tree; standalone repo retired)
 
 ---
 
@@ -11,13 +11,19 @@ Personal automation hub for Claude Code, MCP integrations, plugins, research too
 
 | Area | Path | Purpose |
 |------|------|---------|
-| **JonnyJr** | [`JonnyJr/`](./JonnyJr) | AI research helper — automated research, synthesis, scheduled workflows, PR creation |
-| **Engineering stacks** | [`Engineering-Projects/`](./Engineering-Projects) | Engineering + app-dev tech stacks (MATLAB/Python/SQL/C++, Next.js/Flutter/Supabase) |
-| **Automations** | [`7-automations/`](./7-automations) | Make.com / Second Brain chief-of-staff automations |
-| **Agent setups** | [`agent-trio/`](./agent-trio), [`trading-intelligence-agent/`](./trading-intelligence-agent) | Multi-agent and trading intelligence configs |
-| **Agent team** | [`agent-team/`](./agent-team) | Portable specialist skills + Managed Agents + Cursor export (laptop/desktop) |
-| **Future-drivers research** | [`future-drivers-research/`](./future-drivers-research) | Four-agent thematic research loop on Claude Managed Agents |
-| **Claude plugins** | `claude-*-plugin-upload/` | Packaged Claude Code plugins (ruflo, context7, mem, repomix, etc.) |
+| **JonnyJr** | [`agents/JonnyJr/`](./agents/JonnyJr) | AI research helper — automated research, synthesis, scheduled workflows, PR creation |
+| **Engineering stacks** | [`projects/Engineering-Projects/`](./projects/Engineering-Projects) | Engineering + app-dev tech stacks (MATLAB/Python/SQL/C++, Next.js/Flutter/Supabase) |
+| **Automations** | [`automations/`](./automations) | Make.com / Second Brain chief-of-staff automations |
+| **Agent team** | [`agents/agent-team/`](./agents/agent-team) | Portable specialist skills + Managed Agents + Cursor export (laptop/desktop) |
+| **Agent trio** | [`agents/agent-trio/`](./agents/agent-trio) | Multi-agent setup |
+| **Future-drivers research** | [`agents/future-drivers-research/`](./agents/future-drivers-research) | Four-agent thematic research loop on Claude Managed Agents |
+| **Trading intelligence** | [`trading/trading-intelligence-agent/`](./trading/trading-intelligence-agent) | Trading intelligence agent (FastAPI + data platform) |
+| **Trading desk** | [`trading/trading-desk/`](./trading/trading-desk) | Engine-workspace stub; vendor repos stay outside this hub |
+| **Pilot Engine** | [`trading/pilot-engine/`](./trading/pilot-engine) | Firebase Phase 0 ingest / validate / approval-gated execute |
+| **Claude plugins** | [`plugins/`](./plugins) | Packaged Claude Code plugins (ruflo, context7, mem, repomix, AI-Trader, etc.) |
+| **Content engine** | [`.claude/skills/content-engine/`](./.claude/skills/content-engine) | Repo activity → YouTube packages and written posts |
+| **Content production** | [`.claude/skills/content-production/`](./.claude/skills/content-production) | ElevenLabs narration, visuals, ffmpeg assembly, YouTube metadata |
+| **Portfolio policy** | [`config/public-sleeve-policy.yaml`](./config/public-sleeve-policy.yaml), [`docs/portfolio-rebalance-policy.md`](./docs/portfolio-rebalance-policy.md) | Public.com sleeve policy + weekly rebalance rules |
 | **Claude config** | [`CLAUDE.md`](./CLAUDE.md), [`.mcp.json`](./.mcp.json) | Project-level Claude Code rules and MCP servers |
 
 ---
@@ -26,7 +32,7 @@ Personal automation hub for Claude Code, MCP integrations, plugins, research too
 
 ### Engineering
 - **Languages**: MATLAB, Python, SQL, C/C++
-- **Tooling**: OnShape, SolidWorks, MATLAB, KiCad, ANSYS, COMSOL, Fusion 360, and more — see [`Engineering-Projects/01_Comprehensive_TechStack`](./Engineering-Projects/01_Comprehensive_TechStack)
+- **Tooling**: OnShape, SolidWorks, MATLAB, KiCad, ANSYS, COMSOL, Fusion 360, and more — see [`projects/Engineering-Projects/01_Comprehensive_TechStack`](./projects/Engineering-Projects/01_Comprehensive_TechStack)
 
 ### Full-Stack / App Development
 - **Frontend**: Next.js, React, TypeScript
@@ -38,11 +44,11 @@ Personal automation hub for Claude Code, MCP integrations, plugins, research too
 
 ## JonnyJr (nested)
 
-[`JonnyJr/`](./JonnyJr) lives in this repo as the AI research helper: daily/nightly research workflows, synthesis scripts, and auto-PR reporting. The standalone `jonnyterrero/JonnyJr` repo has been deleted.
+[`agents/JonnyJr/`](./agents/JonnyJr) lives in this repo as the AI research helper: daily/nightly research workflows, synthesis scripts, and auto-PR reporting. The standalone `jonnyterrero/JonnyJr` repo has been deleted.
 
 ```bash
-# From JonnyJr/
-cd JonnyJr
+# From agents/JonnyJr/
+cd agents/JonnyJr
 npm install
 npm run research      # run research
 npm run synthesize    # synthesize findings
@@ -193,14 +199,22 @@ Claude will never read without explicit instruction:
 ├── README.md                          # This file
 ├── CLAUDE.md                          # Project-level Claude Code config
 ├── .mcp.json                          # MCP server configuration
-├── JonnyJr/                           # AI research helper (in-tree)
-├── Engineering-Projects/              # Engineering + app dev tech stacks (subtree)
-├── 7-automations/                     # Make.com and Second Brain automations
-├── agent-trio/                        # Multi-agent setups
-├── agent-team/                        # Portable specialist skills + Managed Agents
-├── future-drivers-research/           # Thematic research loop (Claude Managed Agents)
-├── trading-intelligence-agent/        # Trading intelligence agent
-└── claude-*-plugin-upload/            # Claude Code plugin packages
+├── .claude/                           # Claude Code project skills, agents, hooks
+├── plugins/                           # Claude Code plugin upload bundles
+├── agents/
+│   ├── JonnyJr/                       # AI research helper (in-tree)
+│   ├── agent-team/                    # Portable specialist skills + Managed Agents
+│   ├── agent-trio/                    # Multi-agent setups
+│   └── future-drivers-research/       # Thematic research loop
+├── trading/
+│   ├── trading-intelligence-agent/    # Trading intelligence platform
+│   ├── trading-desk/                  # Engine-workspace stub
+│   └── pilot-engine/                  # Firebase Phase 0
+├── automations/                       # Make.com and Second Brain automations
+├── projects/Engineering-Projects/     # Engineering + app dev tech stacks
+├── config/                            # Sleeve / operating policy
+├── docs/                              # Hub handoffs and portfolio policy
+└── scripts/                           # Utility scripts (including trading-desk clones)
 ```
 
 ---

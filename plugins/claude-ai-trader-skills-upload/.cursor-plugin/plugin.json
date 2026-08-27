@@ -1,0 +1,13 @@
+{
+  "name": "ai-trader-portable-skills",
+  "displayName": "AI-Trader Portable Skills",
+  "description": "Portable AI-Trader reference skills with team-commons supervised-write safety gates.",
+  "version": "0.1.0",
+  "author": {
+    "name": "HKUDS (upstream); Jonny agent-team adaptation"
+  },
+  "homepage": "https://github.com/HKUDS/AI-Trader",
+  "repository": "https://github.com/HKUDS/AI-Trader",
+  "keywords": ["ai-trader", "trading", "copy-trading", "market-intel", "polymarket", "skills"],
+  "skills": "./skills/"
+}

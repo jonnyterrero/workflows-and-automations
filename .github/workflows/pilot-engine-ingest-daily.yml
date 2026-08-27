@@ -1,0 +1,65 @@
+name: Pilot Engine ingest
+
+on:
+  pull_request:
+    paths:
+      - "trading/pilot-engine/**"
+      - ".github/workflows/pilot-engine-ingest-daily.yml"
+  schedule:
+    - cron: "17 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FIREBASE_PROJECT_ID: demo-pilot-engine
+
+jobs:
+  lint-and-ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: trading/pilot-engine
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: trading/pilot-engine/uv.lock
+
+      - name: Install Python 3.12
+        run: uv python install 3.12
+
+      - name: Sync locked dependencies
+        run: uv sync --locked --dev
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Test against Firestore emulator
+        run: >-
+          npx -y firebase-tools@latest emulators:exec
+          --only firestore
+          --project demo-pilot-engine
+          --config firebase/firebase.json
+          "uv run pytest"
+
+      - name: Run ingestion
+        run: uv run python ingest/normalize.py

@@ -3,10 +3,10 @@ name: Investment Agents Demo
 on:
   pull_request:
     paths:
-      - "trading-intelligence-agent/packages/investment_agents/**"
-      - "trading-intelligence-agent/scripts/run_investment_committee_demo.py"
-      - "trading-intelligence-agent/tests/unit/test_investment_agents.py"
-      - "trading-intelligence-agent/pyproject.toml"
+      - "trading/trading-intelligence-agent/packages/investment_agents/**"
+      - "trading/trading-intelligence-agent/scripts/run_investment_committee_demo.py"
+      - "trading/trading-intelligence-agent/tests/unit/test_investment_agents.py"
+      - "trading/trading-intelligence-agent/pyproject.toml"
       - ".github/workflows/investment-agents-demo.yml"
   workflow_dispatch:
 
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: trading-intelligence-agent
+        working-directory: trading/trading-intelligence-agent
 
     steps:
       - name: Check out repository
@@ -29,7 +29,7 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: trading-intelligence-agent/pyproject.toml
+          cache-dependency-path: trading/trading-intelligence-agent/pyproject.toml
 
       - name: Install project
         run: |
@@ -56,5 +56,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: investment-committee-demo
-          path: trading-intelligence-agent/output/investment-committee-demo.json
+          path: trading/trading-intelligence-agent/output/investment-committee-demo.json
           if-no-files-found: error

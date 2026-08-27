@@ -1,0 +1,17 @@
+{
+  "folders": [
+    { "name": "00 — workspace root", "path": ".." },
+    { "name": "Ruflo (plugin upload)", "path": "claude-ruflo-plugin-upload" },
+    { "name": "Superpowers (plugin upload)", "path": "claude-superpowers-plugin-upload" },
+    { "name": "Claude-mem (plugin upload)", "path": "claude-mem-plugin-upload" },
+    { "name": "Repomix MCP (plugin upload)", "path": "claude-repomix-plugin-upload" },
+    { "name": "Repomix commands (plugin upload)", "path": "claude-repomix-commands-plugin-upload" },
+    { "name": "Repomix explorer (plugin upload)", "path": "claude-repomix-explorer-plugin-upload" },
+    { "name": "Context7 (plugin upload)", "path": "claude-context7-plugin-upload" },
+    { "name": "UI/UX Pro Max (plugin upload)", "path": "claude-ui-ux-pro-max-plugin-upload" },
+    { "name": "Obsidian skills (plugin upload)", "path": "claude-obsidian-skills-plugin-upload" },
+    { "name": "Payload dev (plugin upload)", "path": "claude-payload-plugin-upload" },
+    { "name": "AI-Trader skills (plugin upload)", "path": "claude-ai-trader-skills-upload" }
+  ],
+  "settings": {}
+}

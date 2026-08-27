@@ -449,10 +449,15 @@ record_failure() {
       title="🚨 Earn Hunter · 连续 3 轮扫描失败"
       body=$(printf '最近 3 次扫描均未成功完成。\n\n🔍 最后一次错误：\n   %s\n\n🛠 排查建议：\n   1. 检查网络连接\n   2. 运行 `okx auth login` 确认凭证有效\n   3. 运行 `okx earn flash-earn projects --json` 手动测试 API\n   4. 检查日志: cat ~/.okx/earn-hunter/cron.log' "$err_display")
     fi
-    dispatch "$title" "$body" "red" "error:consecutive_failures"
-    # Reset after alerting.
-    tmp=$(jq '.consecutive_failures=0' "$STATE_FILE" 2>/dev/null)
-    [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+    if dispatch "$title" "$body" "red" "error:consecutive_failures"; then
+      # Reset only once the alert actually delivered — otherwise a
+      # persistent outage that also can't notify goes silent forever
+      # instead of re-alerting on the next scan.
+      tmp=$(jq '.consecutive_failures=0' "$STATE_FILE" 2>/dev/null)
+      [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+    else
+      return 1
+    fi
   fi
 }
 
@@ -482,8 +487,7 @@ resolve_lang
 
 # Forced-failure test hook
 if [[ "${EH_FORCE_FAIL:-0}" == "1" ]]; then
-  record_failure "forced failure (EH_FORCE_FAIL)"
-  exit 0
+  if record_failure "forced failure (EH_FORCE_FAIL)"; then exit 0; else exit 1; fi
 fi
 
 FLASH_ENABLED=$(cfg '.flash.enabled' 'true')
@@ -513,7 +517,7 @@ if [[ "$FLASH_ENABLED" == "true" ]]; then
   FLASH_RAW=$(fetch_flash)
   if ! echo "$FLASH_RAW" | jq -e 'type=="array"' >/dev/null 2>&1; then
     if is_auth_error "$FLASH_RAW"; then
-      alert_auth; exit 0
+      if alert_auth; then exit 0; else exit 1; fi
     fi
     SCAN_ERR="flash fetch failed: $(printf '%s' "$FLASH_RAW" | head -c 120)"
     FLASH_RAW="[]"
@@ -527,7 +531,7 @@ if [[ "$FIXED_ENABLED" == "true" ]]; then
   FIXED_RAW=$(fetch_fixed)
   if ! echo "$FIXED_RAW" | jq -e 'type=="array"' >/dev/null 2>&1; then
     if is_auth_error "$FIXED_RAW"; then
-      alert_auth; exit 0
+      if alert_auth; then exit 0; else exit 1; fi
     fi
     SCAN_ERR="${SCAN_ERR:+$SCAN_ERR; }fixed fetch failed: $(printf '%s' "$FIXED_RAW" | head -c 120)"
     FIXED_RAW="[]"
@@ -542,7 +546,7 @@ if [[ "$FLEX_ENABLED" == "true" ]]; then
   FLEX_RC=$?
   if ! echo "$FLEX_RAW" | jq -e 'type=="array"' >/dev/null 2>&1; then
     if is_auth_error "$FLEX_RAW"; then
-      alert_auth; exit 0
+      if alert_auth; then exit 0; else exit 1; fi
     fi
     SCAN_ERR="${SCAN_ERR:+$SCAN_ERR; }flexible fetch failed: $(printf '%s' "$FLEX_RAW" | head -c 120)"
     FLEX_RAW="[]"
@@ -566,8 +570,7 @@ fi
 # Only count as scan failure if ALL enabled feeds failed.
 # Partial failure → continue with the feeds that succeeded.
 if [[ "$FEEDS_FAILED" -gt 0 && "$FEEDS_FAILED" -ge "$FEEDS_ENABLED" ]]; then
-  record_failure "$SCAN_ERR"
-  exit 0
+  if record_failure "$SCAN_ERR"; then exit 0; else exit 1; fi
 fi
 
 # ---- Step 3: filters (jq) ----

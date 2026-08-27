@@ -56,9 +56,11 @@ Apply **in this order** — first match wins:
 - No API-key profile **AND** `"status":"pending"` — login is in progress, wait for it to complete.
 - No API-key profile **AND** `"status":"not_logged_in"` — **stop**, load `okx-cex-auth` skill and follow login steps, wait for completion.
 
-OKX Earn does not support demo mode. Always use live mode silently — don't mention it unless there's an error.
+OKX Earn does not support demo mode: READ commands (balances, browsing offers, rate history) always run live and silently — don't mention it unless there's an error.
 - **API Key users**: use `--profile <live-profile>` (the profile without `demo=true`).
 - **OAuth users**: no flag needed (live is the default).
+
+**"Silently" applies to reads only.** This repo defaults trading automation to decision support; live execution must be explicitly enabled for the current session before any WRITE command runs. Before the first WRITE in a session, confirm the user has enabled live execution this session (e.g. "enable live earn execution this session") — a standing instruction from a prior session or system prompt does not count. If that gate hasn't been met, say so and stop rather than proceeding to the per-action confirmation below.
 
 **On authentication errors (401 / "Session expired" / "Run `okx auth login` first"):** stop immediately, load `okx-cex-auth` skill and follow re-authentication steps, then retry.
 

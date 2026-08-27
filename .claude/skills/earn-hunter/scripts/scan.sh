@@ -221,8 +221,15 @@ fetch_fixed() {
   local rc=$?
   # Fallback: fixed-products unavailable (CLI <1.3.3) → rate-history.fixedOffers
   if [[ $rc -ne 0 || -z "$out" ]] || ! echo "$out" | jq -e 'type=="array"' >/dev/null 2>&1; then
-    local rh
+    local rh rh_rc
     rh=$(retry_cmd okx "${PROFILE_ARGS[@]+"${PROFILE_ARGS[@]}"}" earn savings rate-history --limit 1 --json)
+    rh_rc=$?
+    if [[ $rh_rc -ne 0 ]]; then
+      # Fallback command itself failed — propagate its error text rather than
+      # masking a total outage as an empty (successful-looking) result.
+      printf '%s' "$rh"
+      return 1
+    fi
     out=$(echo "$rh" | jq -c '.fixedOffers // []' 2>/dev/null)
     [[ -z "$out" ]] && out="[]"
   fi
@@ -287,15 +294,19 @@ detect_channel() {
   [[ -n "$tg_token" && -n "$tg_chat" ]] && tg_ready=1
   if [[ "$lark" == https://* && "$lark" == *"/hook/"* ]]; then lark_ready=1; fi
 
+  local fallback_session
+  fallback_session=$(jq -r '.notify.fallbackToSession // false' "$PLATFORM_FILE" 2>/dev/null)
+
   case "$ch" in
     telegram) [[ $tg_ready -eq 1 ]] && { echo telegram; return; } ;;
     lark)     [[ $lark_ready -eq 1 ]] && { echo lark; return; } ;;
     session)  echo session; return ;;
   esac
-  # auto / fell through
+  # auto / fell through — only degrade to session if explicitly allowed
   if [[ $tg_ready -eq 1 ]]; then echo telegram; return; fi
   if [[ $lark_ready -eq 1 ]]; then echo lark; return; fi
-  echo session
+  [[ "$fallback_session" == "true" ]] && { echo session; return; }
+  echo none
 }
 
 send_telegram() {
@@ -475,6 +486,9 @@ FLEX_RAW="[]"
 SCAN_ERR=""
 FEEDS_ENABLED=0
 FEEDS_FAILED=0
+FLASH_OK=1
+FIXED_OK=1
+FLEX_OK=1
 
 if [[ "$FLASH_ENABLED" == "true" ]]; then
   FEEDS_ENABLED=$((FEEDS_ENABLED+1))
@@ -486,6 +500,7 @@ if [[ "$FLASH_ENABLED" == "true" ]]; then
     SCAN_ERR="flash fetch failed: $(printf '%s' "$FLASH_RAW" | head -c 120)"
     FLASH_RAW="[]"
     FEEDS_FAILED=$((FEEDS_FAILED+1))
+    FLASH_OK=0
   fi
 fi
 
@@ -499,6 +514,7 @@ if [[ "$FIXED_ENABLED" == "true" ]]; then
     SCAN_ERR="${SCAN_ERR:+$SCAN_ERR; }fixed fetch failed: $(printf '%s' "$FIXED_RAW" | head -c 120)"
     FIXED_RAW="[]"
     FEEDS_FAILED=$((FEEDS_FAILED+1))
+    FIXED_OK=0
   fi
 fi
 
@@ -512,6 +528,7 @@ if [[ "$FLEX_ENABLED" == "true" ]]; then
     SCAN_ERR="${SCAN_ERR:+$SCAN_ERR; }flexible fetch failed: $(printf '%s' "$FLEX_RAW" | head -c 120)"
     FLEX_RAW="[]"
     FEEDS_FAILED=$((FEEDS_FAILED+1))
+    FLEX_OK=0
   fi
 fi
 
@@ -741,43 +758,52 @@ if [[ "$DELIVERED" == "1" ]]; then
 fi
 
 # ---- Step 6a/6b: diff cleanup (skip test: keys) ----
+# Only clean up a feed's dedup keys once we know its current membership —
+# a failed fetch normalizes RAW/FILTERED to "[]", which would otherwise read
+# as "nothing is active any more" and wipe every dedup key for that feed.
 # Flash: ID-level. Keep keys whose id is still present in raw flash_results.
-CURRENT_FLASH_IDS=$(echo "$FLASH_RAW" | jq -c '[ .[] | (.id|tostring) ]' 2>/dev/null); [[ -z "$CURRENT_FLASH_IDS" ]] && CURRENT_FLASH_IDS="[]"
-tmp=$(jq --argjson ids "$CURRENT_FLASH_IDS" '
-  .flash = ( .flash | with_entries(
-    select(
-      (.key|startswith("test:"))
-      or ( ( .key | sub("^test:";"") | split(":")[0] ) as $id | ($ids | index($id)) )
-    )
-  ) )
-' "$STATE_FILE" 2>/dev/null)
-[[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+if [[ "$FLASH_OK" == "1" ]]; then
+  CURRENT_FLASH_IDS=$(echo "$FLASH_RAW" | jq -c '[ .[] | (.id|tostring) ]' 2>/dev/null); [[ -z "$CURRENT_FLASH_IDS" ]] && CURRENT_FLASH_IDS="[]"
+  tmp=$(jq --argjson ids "$CURRENT_FLASH_IDS" '
+    .flash = ( .flash | with_entries(
+      select(
+        (.key|startswith("test:"))
+        or ( ( .key | sub("^test:";"") | split(":")[0] ) as $id | ($ids | index($id)) )
+      )
+    ) )
+  ' "$STATE_FILE" 2>/dev/null)
+  [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+fi
 
 # Fixed: key-level. current_fixed_keys = raw offers not soldOut and lendQuota>0.
-CURRENT_FIXED_KEYS=$(echo "$FIXED_RAW" | jq -c '
-  [ .[] | select(.soldOut != true) | select(((.lendQuota // "")|tostring) != "" and ((.lendQuota|tonumber?)//0) > 0)
-    | (.ccy + ":" + .term + ":" + (.rate|tostring)) ]
-' 2>/dev/null); [[ -z "$CURRENT_FIXED_KEYS" ]] && CURRENT_FIXED_KEYS="[]"
-tmp=$(jq --argjson keys "$CURRENT_FIXED_KEYS" '
-  .fixed = ( .fixed | with_entries(
-    select(
-      (.key|startswith("test:"))
-      or ( ( .key | sub("^test:";"") ) as $k | ($keys | index($k)) )
-    )
-  ) )
-' "$STATE_FILE" 2>/dev/null)
-[[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+if [[ "$FIXED_OK" == "1" ]]; then
+  CURRENT_FIXED_KEYS=$(echo "$FIXED_RAW" | jq -c '
+    [ .[] | select(.soldOut != true) | select(((.lendQuota // "")|tostring) != "" and ((.lendQuota|tonumber?)//0) > 0)
+      | (.ccy + ":" + .term + ":" + (.rate|tostring)) ]
+  ' 2>/dev/null); [[ -z "$CURRENT_FIXED_KEYS" ]] && CURRENT_FIXED_KEYS="[]"
+  tmp=$(jq --argjson keys "$CURRENT_FIXED_KEYS" '
+    .fixed = ( .fixed | with_entries(
+      select(
+        (.key|startswith("test:"))
+        or ( ( .key | sub("^test:";"") ) as $k | ($keys | index($k)) )
+      )
+    ) )
+  ' "$STATE_FILE" 2>/dev/null)
+  [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+fi
 
 # Flexible: key-level. Keep keys whose ccy is still above threshold (in FLEX_FILTERED).
-CURRENT_FLEX_KEYS=$(echo "$FLEX_FILTERED" | jq -c '[ .[] | .ccy ]' 2>/dev/null); [[ -z "$CURRENT_FLEX_KEYS" ]] && CURRENT_FLEX_KEYS="[]"
-tmp=$(jq --argjson keys "$CURRENT_FLEX_KEYS" '
-  .flexible = ( .flexible | with_entries(
-    select(
-      ( .key | sub("^test:";"") ) as $k | ($keys | index($k))
-    )
-  ) )
-' "$STATE_FILE" 2>/dev/null)
-[[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+if [[ "$FLEX_OK" == "1" ]]; then
+  CURRENT_FLEX_KEYS=$(echo "$FLEX_FILTERED" | jq -c '[ .[] | .ccy ]' 2>/dev/null); [[ -z "$CURRENT_FLEX_KEYS" ]] && CURRENT_FLEX_KEYS="[]"
+  tmp=$(jq --argjson keys "$CURRENT_FLEX_KEYS" '
+    .flexible = ( .flexible | with_entries(
+      select(
+        ( .key | sub("^test:";"") ) as $k | ($keys | index($k))
+      )
+    ) )
+  ' "$STATE_FILE" 2>/dev/null)
+  [[ -n "$tmp" ]] && printf '%s\n' "$tmp" > "$STATE_FILE"
+fi
 
 # ---- Step 6c: TTL cleanup (7 days) ----
 # Compute cutoff epoch. notifiedAt parsed via jq fromdateiso8601 best-effort.

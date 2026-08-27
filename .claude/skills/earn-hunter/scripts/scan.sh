@@ -405,6 +405,7 @@ dispatch() {
   local title="$1" body="$2" color="$3" detail="$4"
   local channel
   channel=$(detect_channel)
+  LAST_DISPATCH_CHANNEL="$channel"
   local full
   full="$(printf '%s\n\n%s' "$title" "$body")"
   case "$channel" in
@@ -764,13 +765,19 @@ elif [[ "$N_FLEX_NEW" -gt 0 ]]; then
   if dispatch "$title" "$body" "orange" "flex:${N_FLEX_NEW}"; then DELIVERED=1; fi
 fi
 
-# New opportunities existed but nothing got delivered (e.g. no channel ready
-# and session fallback disabled) — don't let this look like a clean, empty
-# scan to cron or an interactive caller.
+# New opportunities existed but nothing got delivered — don't let this look
+# like a clean, empty scan to cron or an interactive caller. Report the
+# actual cause: either no channel was ready (and session fallback is off),
+# or a channel was selected but its send failed (see notify.log for the
+# recorded API response).
 DELIVERY_FAILED=0
 if [[ "$SECTION_COUNT" -gt 0 && "$DELIVERED" != "1" ]]; then
   DELIVERY_FAILED=1
-  echo "earn-hunter: found new opportunities but delivery failed (no channel ready; fallbackToSession disabled)" >&2
+  if [[ -z "${LAST_DISPATCH_CHANNEL:-}" || "$LAST_DISPATCH_CHANNEL" == "none" ]]; then
+    echo "earn-hunter: found new opportunities but delivery failed (no channel ready; fallbackToSession disabled)" >&2
+  else
+    echo "earn-hunter: found new opportunities but delivery via '${LAST_DISPATCH_CHANNEL}' failed — see notify.log for the channel's response" >&2
+  fi
 fi
 
 # ---- Step 6: commit dedup keys (only for delivered notifications) ----

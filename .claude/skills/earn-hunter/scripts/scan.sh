@@ -246,13 +246,20 @@ fetch_flexible() {
   if [[ "$ccys" == '"all"' || "$ccys" == '[]' ]]; then
     ccys='["USDT","USDC"]'
   fi
-  local ccy_list
+  local ccy_list had_failure=0
   ccy_list=$(echo "$ccys" | jq -r '.[]' 2>/dev/null)
   while IFS= read -r ccy; do
     [[ -z "$ccy" ]] && continue
-    local out
+    local out rc
     out=$(retry_cmd okx "${PROFILE_ARGS[@]+"${PROFILE_ARGS[@]}"}" earn savings rate-history --ccy "$ccy" --limit 1 --json)
-    if [[ $? -eq 0 ]] && echo "$out" | jq -e '.data[0]' >/dev/null 2>&1; then
+    rc=$?
+    if [[ $rc -ne 0 ]]; then
+      # Command itself failed (retries exhausted) — distinct from a
+      # successful call with no data for this currency.
+      had_failure=1
+      continue
+    fi
+    if echo "$out" | jq -e '.data[0]' >/dev/null 2>&1; then
       local rate
       rate=$(echo "$out" | jq -r '.data[0].lendingRate // ""' 2>/dev/null)
       if [[ -n "$rate" && "$rate" != "null" ]]; then
@@ -261,6 +268,7 @@ fetch_flexible() {
     fi
   done <<< "$ccy_list"
   printf '%s' "$result"
+  return $had_failure
 }
 
 # ---------------------------------------------------------------------------
@@ -281,6 +289,13 @@ detect_channel() {
   ch=$(jq -r '.notify.channel // "auto"' "$PLATFORM_FILE" 2>/dev/null)
   [[ -z "$ch" || "$ch" == "null" ]] && ch="auto"
 
+  # fallbackToSession=true is the documented troubleshooting escape hatch:
+  # skip external channels entirely and go straight to session, even if a
+  # (possibly still-misconfigured) external channel looks ready.
+  local fallback_session
+  fallback_session=$(cfg '.notify.fallbackToSession' 'false')
+  [[ "$fallback_session" == "true" ]] && { echo session; return; }
+
   local tg_token_env tg_chat_env lark
   tg_token_env=$(jq -r '.notify.telegram.bot_token_env // "TELEGRAM_BOT_TOKEN"' "$PLATFORM_FILE" 2>/dev/null)
   tg_chat_env=$(jq -r '.notify.telegram.chat_id_env // "TELEGRAM_CHAT_ID"' "$PLATFORM_FILE" 2>/dev/null)
@@ -294,18 +309,14 @@ detect_channel() {
   [[ -n "$tg_token" && -n "$tg_chat" ]] && tg_ready=1
   if [[ "$lark" == https://* && "$lark" == *"/hook/"* ]]; then lark_ready=1; fi
 
-  local fallback_session
-  fallback_session=$(cfg '.notify.fallbackToSession' 'false')
-
   case "$ch" in
     telegram) [[ $tg_ready -eq 1 ]] && { echo telegram; return; } ;;
     lark)     [[ $lark_ready -eq 1 ]] && { echo lark; return; } ;;
     session)  echo session; return ;;
   esac
-  # auto / fell through — only degrade to session if explicitly allowed
+  # auto / fell through (fallback_session already handled above)
   if [[ $tg_ready -eq 1 ]]; then echo telegram; return; fi
   if [[ $lark_ready -eq 1 ]]; then echo lark; return; fi
-  [[ "$fallback_session" == "true" ]] && { echo session; return; }
   echo none
 }
 
@@ -521,6 +532,7 @@ fi
 if [[ "$FLEX_ENABLED" == "true" ]]; then
   FEEDS_ENABLED=$((FEEDS_ENABLED+1))
   FLEX_RAW=$(fetch_flexible)
+  FLEX_RC=$?
   if ! echo "$FLEX_RAW" | jq -e 'type=="array"' >/dev/null 2>&1; then
     if is_auth_error "$FLEX_RAW"; then
       alert_auth; exit 0
@@ -528,6 +540,11 @@ if [[ "$FLEX_ENABLED" == "true" ]]; then
     SCAN_ERR="${SCAN_ERR:+$SCAN_ERR; }flexible fetch failed: $(printf '%s' "$FLEX_RAW" | head -c 120)"
     FLEX_RAW="[]"
     FEEDS_FAILED=$((FEEDS_FAILED+1))
+    FLEX_OK=0
+  elif [[ "$FLEX_RC" -ne 0 ]]; then
+    # Valid (possibly partial) array, but one or more currencies failed to
+    # fetch — still use what we have for this scan, but don't let dedup
+    # diff-cleanup treat the missing currencies as "no longer qualifying".
     FLEX_OK=0
   fi
 fi

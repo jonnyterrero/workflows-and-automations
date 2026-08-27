@@ -246,17 +246,18 @@ fetch_flexible() {
   if [[ "$ccys" == '"all"' || "$ccys" == '[]' ]]; then
     ccys='["USDT","USDC"]'
   fi
-  local ccy_list had_failure=0
+  local ccy_list attempted=0 failed=0
   ccy_list=$(echo "$ccys" | jq -r '.[]' 2>/dev/null)
   while IFS= read -r ccy; do
     [[ -z "$ccy" ]] && continue
+    attempted=$((attempted+1))
     local out rc
     out=$(retry_cmd okx "${PROFILE_ARGS[@]+"${PROFILE_ARGS[@]}"}" earn savings rate-history --ccy "$ccy" --limit 1 --json)
     rc=$?
     if [[ $rc -ne 0 ]]; then
       # Command itself failed (retries exhausted) — distinct from a
       # successful call with no data for this currency.
-      had_failure=1
+      failed=$((failed+1))
       continue
     fi
     if echo "$out" | jq -e '.data[0]' >/dev/null 2>&1; then
@@ -268,7 +269,12 @@ fetch_flexible() {
     fi
   done <<< "$ccy_list"
   printf '%s' "$result"
-  return $had_failure
+  # 0 = all attempted currencies fetched cleanly
+  # 1 = partial failure (some currencies fetched, some didn't)
+  # 2 = total failure (every currency failed — treat as a feed outage)
+  if [[ $failed -eq 0 ]]; then return 0; fi
+  if [[ $attempted -gt 0 && $failed -eq $attempted ]]; then return 2; fi
+  return 1
 }
 
 # ---------------------------------------------------------------------------
@@ -541,10 +547,17 @@ if [[ "$FLEX_ENABLED" == "true" ]]; then
     FLEX_RAW="[]"
     FEEDS_FAILED=$((FEEDS_FAILED+1))
     FLEX_OK=0
+  elif [[ "$FLEX_RC" -eq 2 ]]; then
+    # Every configured currency failed — a real feed outage, not a partial
+    # gap. Count it like the other feeds' total-failure path.
+    SCAN_ERR="${SCAN_ERR:+$SCAN_ERR; }flexible fetch failed: all currencies exhausted retries"
+    FLEX_RAW="[]"
+    FEEDS_FAILED=$((FEEDS_FAILED+1))
+    FLEX_OK=0
   elif [[ "$FLEX_RC" -ne 0 ]]; then
-    # Valid (possibly partial) array, but one or more currencies failed to
-    # fetch — still use what we have for this scan, but don't let dedup
-    # diff-cleanup treat the missing currencies as "no longer qualifying".
+    # Valid partial array — some currencies fetched, some didn't. Still use
+    # what we have for this scan, but don't let dedup diff-cleanup treat
+    # the missing currencies as "no longer qualifying".
     FLEX_OK=0
   fi
 fi

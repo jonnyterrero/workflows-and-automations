@@ -879,7 +879,12 @@ if [[ "$N_FLASH_NEW" -eq 0 && "$N_FIXED_NEW" -eq 0 && "$N_FLEX_NEW" -eq 0 ]]; th
   if [[ "$VERBOSE" == "true" ]]; then
     # shellcheck disable=SC2059
     msg=$(printf "$(t verbose_status)" "$N_FLASH_FILT" "$N_FIXED_FILT" "$N_FLEX_FILT")
-    dispatch "Earn Hunter" "$msg" "grey" "verbose:no_new"
+    if ! dispatch "Earn Hunter" "$msg" "grey" "verbose:no_new"; then
+      # verboseLog is used as the activation smoke test for end-to-end
+      # delivery — a failed send here must not look like a clean run.
+      echo "earn-hunter: verbose status failed to deliver — see notify.log for the channel's response" >&2
+      exit 1
+    fi
   fi
   # else: SILENT. No output, exit 0.
   exit 0

@@ -1,0 +1,11 @@
+{
+  "name": "Workflows & Automations — Trading Intelligence API",
+  "install": "bash scripts/cloud-agent-install.sh",
+  "terminals": [
+    {
+      "name": "trading-intelligence-api",
+      "command": "cd trading/trading-intelligence-agent && . .venv/bin/activate && export PYTHONPATH=\"$PWD\" DEMO_MODE=true DATABASE_URL=\"sqlite+aiosqlite:///./data/trading_intel.db\" && exec python -m uvicorn apps.api_service.main:app --host 0.0.0.0 --port 8000"
+    }
+  ],
+  "ports": [8000]
+}

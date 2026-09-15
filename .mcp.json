@@ -43,6 +43,11 @@
       },
       "autoStart": false
     },
+    "gemini-notebook": {
+      "command": "uvx",
+      "args": ["--from", "notebooklm-mcp-cli", "notebooklm-mcp"],
+      "autoStart": false
+    },
     "fusion": {
       "type": "http",
       "url": "${FUSION_MCP_URL:-http://127.0.0.1:27182/mcp}"

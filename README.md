@@ -13,7 +13,7 @@ Personal automation hub for Claude Code, MCP integrations, plugins, research too
 |------|------|---------|
 | **JonnyJr** | [`agents/JonnyJr/`](./agents/JonnyJr) | AI research helper — automated research, synthesis, scheduled workflows, PR creation |
 | **Engineering stacks** | [`projects/Engineering-Projects/`](./projects/Engineering-Projects) | Engineering + app-dev tech stacks (MATLAB/Python/SQL/C++, Next.js/Flutter/Supabase) |
-| **Automations** | [`automations/`](./automations) | Make.com / Second Brain chief-of-staff automations |
+| **Automations** | [`automations/`](./automations) | Make.com, Second Brain chief-of-staff, and social-media voice pipeline |
 | **Agent team** | [`agents/agent-team/`](./agents/agent-team) | Portable specialist skills + Managed Agents + Cursor export (laptop/desktop) |
 | **Agent trio** | [`agents/agent-trio/`](./agents/agent-trio) | Multi-agent setup |
 | **Future-drivers research** | [`agents/future-drivers-research/`](./agents/future-drivers-research) | Four-agent thematic research loop on Claude Managed Agents |
@@ -22,6 +22,7 @@ Personal automation hub for Claude Code, MCP integrations, plugins, research too
 | **Pilot Engine** | [`trading/pilot-engine/`](./trading/pilot-engine) | Firebase Phase 0 ingest / validate / approval-gated execute |
 | **Claude plugins** | [`plugins/`](./plugins) | Packaged Claude Code plugins (ruflo, context7, mem, repomix, AI-Trader, etc.) |
 | **Content engine** | [`.claude/skills/content-engine/`](./.claude/skills/content-engine) | Repo activity → YouTube packages and written posts |
+| **Draft content** | [`.claude/skills/draft-content/`](./.claude/skills/draft-content) | Personal IG/X captions in the Social Media Second Brain voice |
 | **Content production** | [`.claude/skills/content-production/`](./.claude/skills/content-production) | ElevenLabs narration, visuals, ffmpeg assembly, YouTube metadata |
 | **Portfolio policy** | [`config/public-sleeve-policy.yaml`](./config/public-sleeve-policy.yaml), [`docs/portfolio-rebalance-policy.md`](./docs/portfolio-rebalance-policy.md) | Public.com sleeve policy + weekly rebalance rules |
 | **Claude config** | [`CLAUDE.md`](./CLAUDE.md), [`.mcp.json`](./.mcp.json) | Project-level Claude Code rules and MCP servers |
@@ -192,6 +193,24 @@ Claude will never read without explicit instruction:
 
 ---
 
+## Social Media Second Brain (content layer)
+
+Sibling of the Obsidian/chief-of-staff layer. Ingests official Instagram/X exports,
+distills a voice pack, and drafts captions without auto-posting.
+
+- Pipeline: [`automations/second-brain-social-media/`](./automations/second-brain-social-media)
+- Skill: [`.claude/skills/draft-content/`](./.claude/skills/draft-content)
+- Generated archives and `content_pack/` stay in a local working folder (`SOCIAL_BRAIN_ROOT`). They are not committed.
+
+After a new export drop:
+
+```powershell
+cd automations/second-brain-social-media/scripts
+.\refresh_second_brain.ps1
+```
+
+---
+
 ## Repo Structure
 
 ```
@@ -210,7 +229,10 @@ Claude will never read without explicit instruction:
 │   ├── trading-intelligence-agent/    # Trading intelligence platform
 │   ├── trading-desk/                  # Engine-workspace stub
 │   └── pilot-engine/                  # Firebase Phase 0
-├── automations/                       # Make.com and Second Brain automations
+├── automations/
+│   ├── second-brain-chief-of-staff/   # Planning / retrieval GPT + knowledge-base
+│   ├── second-brain-social-media/     # IG/X export pipeline (code only; data stays local)
+│   └── notebooklm-integration/
 ├── projects/Engineering-Projects/     # Engineering + app dev tech stacks
 ├── config/                            # Sleeve / operating policy
 ├── docs/                              # Hub handoffs and portfolio policy

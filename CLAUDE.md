@@ -17,7 +17,7 @@
 - Use `/plugins` for Claude Code plugin upload bundles
 - Use `/agents` for agent-team, agent-trio, JonnyJr, future-drivers-research
 - Use `/trading` for trading-intelligence-agent, trading-desk, pilot-engine
-- Use `/automations` for Make.com / Second Brain automations
+- Use `/automations` for Make.com / Second Brain automations (chief-of-staff + social-media layer)
 - Use `/projects` for Engineering-Projects and similar nested stacks
 - Use `/docs` for hub-level documentation and handoffs
 - Use `/config` for configuration files

@@ -1,0 +1,24 @@
+# ============================================================
+# HARD RULE: personal social data never enters this public repo.
+# Only pipeline scripts and template docs are committed.
+# ============================================================
+
+# Pipeline outputs
+content_pack/
+second-brain-instagram/
+_prepared_uploads/
+_upload_batches/
+*.jsonl
+
+# Raw platform exports (any naming variant)
+*full?context*/
+*full context*/
+twitter?archives/
+instagram-*/
+jxnnys.wrld/
+juicedupjonnyy/
+
+# Filled-in personal docs (repo keeps templates only)
+UPLOAD_INDEX.md
+*_personal.md
+config.local.json

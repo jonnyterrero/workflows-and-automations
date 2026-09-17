@@ -8,4 +8,5 @@
 - `agents/agent-team/` is the canonical source for specialist skills, roster metadata, routing rules, evaluations, and local Cursor/Claude exports.
 - The trading desk uses Freqtrade, Passivbot, AI-Trader, OpenAlgo, Jesse, OctoBot, and OpenAlice as external runtimes; the affiliate-only OKX repository and Auto-StockTrader are intentionally excluded.
 - Hub top-level layout is `plugins/`, `agents/`, `trading/`, `automations/`, `projects/`, `docs/`, `config/`, and `scripts/`; keep plugin-upload bundles and nested stacks in those folders rather than at the repo root.
+- Social-media second brain is a sibling layer of chief-of-staff at `automations/second-brain-social-media/`; generated voice packs and raw exports stay local (`SOCIAL_BRAIN_ROOT`), never in git. Draft IG/X with the `draft-content` skill.
 - Claude-uploadable engineering skill packs live in the sibling `Skills for AI's` directory, not in this hub.

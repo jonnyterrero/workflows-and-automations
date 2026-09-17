@@ -52,6 +52,13 @@ automations/content-engine/runs/**/*.wav
 automations/content-engine/runs/**/*.srt
 automations/content-engine/runs/**/*.ass
 
+# Social-media second brain: generated data + machine-local config (public repo)
+automations/second-brain-social-media/config.local.json
+automations/second-brain-social-media/content_pack/
+automations/second-brain-social-media/_prepared_uploads/
+automations/second-brain-social-media/_upload_batches/
+automations/second-brain-social-media/**/*.jsonl
+
 # YouTube OAuth artifacts - credentials, never commit
 **/client_secret*.json
 **/youtube-token.json

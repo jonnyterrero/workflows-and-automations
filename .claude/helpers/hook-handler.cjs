@@ -139,11 +139,20 @@ const handlers = {
     const dangerous = ['rm -rf /', 'format c:', 'del /s /q c:\\', ':(){:|:&};:'];
     for (const d of dangerous) {
       if (cmd.includes(d)) {
-        console.error(`[BLOCKED] Dangerous command detected: ${d}`);
-        process.exit(1);
+        // Cursor's beforeShellExecution gate parses stdout as JSON.
+        console.log(JSON.stringify({ permission: 'deny', agentMessage: `Dangerous command blocked: ${d}` }));
+        return;
       }
     }
-    console.log('[OK] Command validated');
+    // Cursor's beforeShellExecution gate requires a JSON decision on stdout.
+    // Claude Code ignores the unknown field and proceeds on exit code 0.
+    console.log(JSON.stringify({ permission: 'allow' }));
+  },
+
+  'pre-edit': () => {
+    // Cursor gates file writes/edits (Write|Edit|MultiEdit) and parses stdout
+    // as JSON. Emit an allow decision; Claude Code ignores it and proceeds.
+    console.log(JSON.stringify({ permission: 'allow' }));
   },
 
   'post-edit': () => {

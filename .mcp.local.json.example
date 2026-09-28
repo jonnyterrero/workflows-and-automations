@@ -1,0 +1,18 @@
+{
+  "_comment": "Copy this file to .mcp.local.json on each laptop where you have KiCAD 9.0+ installed. .mcp.local.json is gitignored so each machine can keep its own paths. Requires: (1) git clone https://github.com/mixelpixx/KiCAD-MCP-Server && cd KiCAD-MCP-Server && npm install && npm run build. (2) set KICAD_MCP_SERVER_PATH and KICAD_PYTHONPATH environment variables in your shell profile (see docs in the KiCAD-MCP-Server README for the correct PYTHONPATH on your OS).",
+  "mcpServers": {
+    "kicad": {
+      "command": "node",
+      "args": ["${KICAD_MCP_SERVER_PATH}/dist/index.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "KICAD_AUTO_LAUNCH": "false",
+        "KICAD_INTERACTIVE_SCHEMATIC": "false",
+        "KICAD_MCP_DEV": "0",
+        "PYTHONPATH": "${KICAD_PYTHONPATH}"
+      },
+      "autoStart": false
+    }
+  }
+}

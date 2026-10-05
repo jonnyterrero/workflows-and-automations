@@ -1,5 +1,18 @@
 {
   "mcpServers": {
+    "kicad": {
+      "command": "node",
+      "args": ["${KICAD_MCP_SERVER_PATH}/dist/index.js"],
+      "env": {
+        "NODE_ENV": "production",
+        "LOG_LEVEL": "info",
+        "KICAD_AUTO_LAUNCH": "false",
+        "KICAD_INTERACTIVE_SCHEMATIC": "false",
+        "KICAD_MCP_DEV": "0",
+        "PYTHONPATH": "${KICAD_PYTHONPATH}"
+      },
+      "autoStart": false
+    },
     "claude-flow": {
       "command": "cmd",
       "args": [
@@ -41,6 +54,11 @@
       "env": {
         "NOTEBOOKLM_PROFILE": "full"
       },
+      "autoStart": false
+    },
+    "gemini-notebook": {
+      "command": "uvx",
+      "args": ["--from", "notebooklm-mcp-cli", "notebooklm-mcp"],
       "autoStart": false
     },
     "fusion": {

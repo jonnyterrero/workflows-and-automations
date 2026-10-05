@@ -260,3 +260,81 @@ for the $400 deposit to settle before flipping DRY_RUN=FALSE.
   The Public MCP exposes no money-movement tool. Breakdown: VXUS $0.13.
 
 **Errors:** none.
+
+---
+
+## 2026-10-05 (Mon) 12:12 ET — RUN STATUS: DRY_RUN
+
+**Accounts (resolved via get_accounts):**
+- BROKERAGE_ACCOUNT_ID: `5OH85517` (CASH, options L2, BUY_AND_SELL)
+- HYSA_ACCOUNT_ID: `2OG64143` (HIGH_YIELD, RESTRICTED_NO_TRADING)
+- Both still `AUTO` in CONFIG — paste to lock in.
+
+**Pre-flight guards:** PASS — Monday, 12:12 ET (inside 09:30–16:00), NASDAQ open
+(`isMarketOpen=true`, not a holiday), quotes fresh (≈12:12 ET), no open orders.
+
+**Snapshot (Step 2):**
+- totalAccountValue: **$470.97**
+- cash: **$20.54** | buyingPower (cashOnly): **$20.54**
+- Composition: STOCK $389.80 (82.77%), CRYPTO $60.63 (12.87%), CASH $20.54 (4.36%)
+- Target sleeve held: VTI $220.90, VXUS $72.81, BIL $0.00 (≈62.3% of account)
+- Off-target holdings (not in TARGET_ALLOCATION): PG $19.74, HD $16.02,
+  ABBV $21.66, BX $16.67, CVX $22.01, BTC $40.62, ETH $20.01 (≈ $156.73 total)
+- Note: account value fell from ~$818 (09-28) after two withdrawals on 09-28
+  ($117.05 + $400.00); the $400 deposit was pulled back out.
+
+**Dividend sweep (Step 3, trailing 7d):**
+| Symbol | Amount | Date |
+|--------|--------|------|
+| VTI  | $0.56 | 2026-09-30 |
+| AVGO | $0.09 | 2026-09-30 |
+| VST  | $0.04 | 2026-09-30 |
+| NVDA | $0.03 | 2026-10-01 |
+| **D_total** | **$0.72** | |
+
+- S = min($0.72, $20.54 cash) = **$0.72**. No shortfall. Reserved from V (not reinvested).
+
+**Drift analysis (Step 4) — V = 470.97 − 0.72 = $470.25:**
+
+| Symbol | qty      | price   | V_i     | w_i    | t_i  | d_i      | threshold | breach |
+|--------|----------|---------|---------|--------|------|----------|-----------|--------|
+| VTI    | 0.58144  | 379.92  | $220.90 | 46.98% | 60%  | −13.02pp | 5.00pp    | YES    |
+| VXUS   | 0.84973  | 85.695  | $72.82  | 15.49% | 30%  | −14.51pp | 5.00pp    | YES    |
+| BIL    | 0.00000  | 91.4406 | $0.00   | 0.00%  | 10%  | −10.00pp | 2.50pp    | YES    |
+
+All three target symbols breach → full rebalance triggered.
+
+**Trade plan (Step 5) — Δ_i = t_i × V − V_i; SELLs first then BUYs (all BUYs here):**
+
+| Order | Symbol | Side | Δ / OrderValue | Est. qty | Preflight BP req | ≤$2,500/order | Status (DRY_RUN) |
+|-------|--------|------|----------------|----------|------------------|---------------|-------------------|
+| 1 | VTI  | BUY | $61.25 | 0.16121 | $61.25 | pass | NOT PLACED |
+| 2 | VXUS | BUY | $68.26 | 0.79655 | $68.26 | pass | NOT PLACED |
+| 3 | BIL  | BUY | $47.03 | 0.51427 | $47.03 | pass | NOT PLACED |
+| **Total** | | | **$176.54** | | **$176.54** | run ≤ $10k ✓ | |
+
+- Fractional confirmed (BUY_AND_SELL) for VTI, VXUS, BIL via get_instrument; fee $0.00 each.
+- Circuit breakers: each order < $2,500 ✓; run total $176.54 < $10,000 ✓; each ≥ MIN $25 ✓.
+- No SELL orders generated — all target sleeves underweight; spec does not liquidate off-target holdings.
+
+**⚠️ BLOCKER (would prevent a live run; recurring every run):**
+1. **UNFUNDABLE:** buys require **$176.54** buying power vs **$20.54** available
+   (short **$156.00**). CASH account, no margin. No SELL orders exist to fund buys.
+2. **STRUCTURAL / CONFIG MISMATCH:** ~$156.73 (33.3%) of the account sits in 7
+   non-target positions (PG, HD, ABBV, BX, CVX, BTC, ETH) that this spec never
+   sells. The drift math uses total account value as denominator V, so the 3
+   target ETFs read as permanently underweight and generate buy orders funded by
+   cash that isn't there. The 60/30/10 model is unreachable without either
+   (a) a spec change that SELLs off-target positions to fund the targets, or
+   (b) adding ≥ ~$156 cash. Needs owner decision before DRY_RUN is set FALSE.
+
+**Sweep to HYSA (Step 7):**
+- S = $0.72 > 0. Public MCP exposes no money-movement tool; HYSA is
+  RESTRICTED_NO_TRADING. **MANUAL ACTION: transfer $0.72 from brokerage
+  `5OH85517` to HYSA `2OG64143` today.** Breakdown: VTI $0.56 + AVGO $0.09 +
+  VST $0.04 + NVDA $0.03.
+
+**Errors:** none — all tool calls succeeded. Blocker is a funding/config issue, not a tool error.
+
+**NEXT RUN:** 2026-10-12 (Mon). Note: still DRY_RUN; the funding/config blocker
+above must be resolved before DRY_RUN is flipped to FALSE.

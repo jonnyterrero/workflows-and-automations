@@ -260,3 +260,78 @@ for the $400 deposit to settle before flipping DRY_RUN=FALSE.
   The Public MCP exposes no money-movement tool. Breakdown: VXUS $0.13.
 
 **Errors:** none.
+
+---
+
+## 2026-10-12 (Mon) 12:12 ET — RUN STATUS: DRY_RUN
+
+**Accounts (resolved via get_accounts):**
+- BROKERAGE_ACCOUNT_ID: `5OH85517` (CASH, options L2, BUY_AND_SELL)
+- HYSA_ACCOUNT_ID: `2OG64143` (HIGH_YIELD, RESTRICTED_NO_TRADING)
+- ACTION FOR USER: paste these into CONFIG (still AUTO) and confirm DRY_RUN plan before flipping FALSE.
+
+**Pre-flight guards:** PASS — Monday, 12:12 ET (inside 09:30–16:00), NASDAQ open
+(`isMarketOpen=true`; Columbus Day is a bond-market holiday but a regular equity
+session), quotes fresh (≈12:12 ET), no open orders.
+
+### ⚠️ MAJOR STATE CHANGE SINCE LAST RUN — ACCOUNT NEARLY EMPTIED
+Between 2026-09-28 and today the portfolio was almost fully liquidated and the
+proceeds withdrawn. From trailing-7d history (2026-10-05 → 2026-10-12):
+- 2026-10-06: +$400.00 deposit, then SELLs of VTI (0.58144 @ 383.59, $223.03),
+  VXUS (0.84973 @ 86.10, $73.15), BX, HD, CVX, PG, ABBV, ETH, BTC.
+- 2026-10-06: −$420.54 disbursement (withdrawal).
+- 2026-10-10: −$402.27 disbursement (withdrawal).
+Net result: the account went from ~$819 (mostly equities) to **$50.53** total.
+
+### Snapshot (Step 2)
+- totalAccountValue: **$50.53**
+- cash: **$50.00** | buyingPower (cashOnly): **$50.00**
+- Composition: CASH $50.00 (98.95%) | CRYPTO $0.53 (1.05% — BTC $0.53 + ETH ~$0.00 dust)
+- Target sleeve (VTI/VXUS/BIL) held: **$0.00 — none of the three are held.**
+
+### Dividend sweep (Step 3)
+- Trailing-7d money movements: 1 DEPOSIT, 2 WITHDRAWALS, 10 TRADEs. **No DIVIDEND events.**
+- D_total = **$0.00** → S = min($0.00, $50.00) = **$0.00**. No sweep, no shortfall.
+
+### Drift analysis (Step 4) — V = 50.53 − 0.00 = **$50.53**
+| Symbol | qty | price    | V_i   | actual w | target t | drift d   | threshold | breach |
+|--------|-----|----------|-------|----------|----------|-----------|-----------|--------|
+| VTI    | 0   | 382.036  | $0.00 | 0.00%    | 60%      | −60.00 pp | 5.00 pp   | YES    |
+| VXUS   | 0   | 84.525   | $0.00 | 0.00%    | 30%      | −30.00 pp | 5.00 pp   | YES    |
+| BIL    | 0   | 91.505   | $0.00 | 0.00%    | 10%      | −10.00 pp | 2.50 pp   | YES    |
+
+All three breach → full rebalance triggered.
+
+### Trade plan (Step 5) — Δ_i = t_i × V − V_i; all BUYs (every target at 0%)
+| Symbol | Side | Δ / OrderValue | Est. qty | Preflight          | ≥ MIN_TRADE $25 | Status            |
+|--------|------|----------------|----------|--------------------|-----------------|-------------------|
+| VTI    | BUY  | $30.32         | 0.07937  | OK, fee $0.00, BP $30.32 | YES ($30.32) | NOT PLACED (dry)  |
+| VXUS   | BUY  | $15.16         | 0.17935  | not preflighted    | NO ($15.16)     | **DROPPED (dust)**|
+| BIL    | BUY  | $5.05          | 0.05522  | not preflighted    | NO ($5.05)      | **DROPPED (dust)**|
+
+- Fractional confirmed (BUY_AND_SELL) for VTI via get_instrument.
+- MIN_TRADE_USD = $25 drops VXUS and BIL (both legs too small for a $50 account).
+- Surviving run notional: **$30.32** — within MAX_TRADE $2,500 ✓ and MAX_RUN $10,000 ✓.
+- No SELLs generated (all targets underweight; spec never sells the crypto dust).
+
+### Notable: for the first time the surviving plan IS fundable
+Unlike prior runs (which wanted ~$550 of unfundable buys), the only surviving
+order is VTI $30.32 vs $50.00 buying power — it *would* fill if DRY_RUN were FALSE.
+BUT executing it alone lands the account at ~60% VTI / 0% VXUS / 0% BIL / ~39%
+cash, i.e. **still off-model**, because the $25 minimum blocks the VXUS and BIL
+legs at this balance. A $50 account cannot be rebalanced into a 60/30/10 three-ETF
+model while a $25 per-trade floor is in force (VXUS needs ≥$83 and BIL needs ≥$250
+of account value just to clear the floor at target weight).
+
+### Sweep (Step 7)
+- S = $0.00 → no transfer, no manual action. (HYSA `2OG64143` is RESTRICTED_NO_TRADING;
+  Public MCP exposes no money-movement tool regardless.)
+
+### Result
+- RUN STATUS: DRY_RUN — no orders placed, nothing changed at the broker.
+- Errors: none (all tool calls succeeded).
+- Owner decisions needed before DRY_RUN=FALSE: (1) confirm the ~$823 withdrawal was
+  intended and whether this account is still meant to run the 60/30/10 model;
+  (2) decide how to handle sub-$25 legs on a tiny balance (fund the account, lower
+  MIN_TRADE_USD, or pause the routine until the balance supports all three legs).
+- NEXT RUN: 2026-10-19 (Mon)

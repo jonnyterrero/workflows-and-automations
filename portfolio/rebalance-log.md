@@ -260,3 +260,71 @@ for the $400 deposit to settle before flipping DRY_RUN=FALSE.
   The Public MCP exposes no money-movement tool. Breakdown: VXUS $0.13.
 
 **Errors:** none.
+
+---
+
+## 2026-10-26 (Mon) 12:12 ET — RUN STATUS: DRY_RUN
+
+**Guards:** Monday, 12:12 ET (16:12 UTC, EDT = UTC−4), within 09:30–16:00 ET,
+not a holiday. Quotes fresh (≈16:14 UTC). No open orders. DRY_RUN = TRUE →
+no orders placed.
+
+### Accounts (resolved via get_accounts; CONFIG still AUTO)
+- BROKERAGE_ACCOUNT_ID: `5OH85517` (CASH, options L2)
+- HYSA_ACCOUNT_ID: `2OG64143` (HIGH_YIELD, RESTRICTED_NO_TRADING)
+- ACTION FOR USER: paste these into CONFIG to lock them in.
+
+### Snapshot (Step 2)
+- totalAccountValue: $79.09
+- cash: $0.00 | buyingPower (cashOnly): $0.00  ← see BLOCKER below
+- Positions: SMH 0.1451 @ $541.58 = $78.58 (99.36%); BTC $0.51; ETH $0.00
+- **No target symbol (VTI/VXUS/BIL) is held.** Entire account is off-target.
+- Account shrank sharply vs 2026-09-28 ($818.83): prior VTI/VXUS + dividend
+  stocks are gone; holdings are now SMH + dust crypto after withdrawals.
+
+### Dividend sweep (Step 3) — trailing 7d
+- Money movements: BUY SMH −$40.00 (10-19); WITHDRAWAL −$360.00 (10-19);
+  WITHDRAWAL −$10.00 (10-19); DEPOSIT +$400.00 (10-20). **No DIVIDEND events.**
+- D_total = $0.00 → S = min(0, 0) = **$0.00**. No sweep. No shortfall.
+
+### Drift analysis (Step 4) — V = 79.09 − 0 = $79.09
+
+| symbol | qty | price    | V_i    | actual w | target t | drift d   | threshold | breach |
+|--------|-----|----------|--------|----------|----------|-----------|-----------|--------|
+| VTI    | 0   | 375.805  | $0.00  | 0.00%    | 60%      | −60.00 pp | 5.00 pp   | YES    |
+| VXUS   | 0   | 82.7401  | $0.00  | 0.00%    | 30%      | −30.00 pp | 5.00 pp   | YES    |
+| BIL    | 0   | 91.6423  | $0.00  | 0.00%    | 10%      | −10.00 pp | 2.50 pp   | YES    |
+
+All three target symbols breach → full rebalance triggered.
+
+### Trade plan (Step 5) — Δ_i = t_i × V − V_i (SELLs first, then BUYs)
+
+| symbol | side | Δ ($)   | est. qty | preflight BP req | MIN_TRADE $25 | status      |
+|--------|------|---------|----------|------------------|---------------|-------------|
+| VTI    | BUY  | +47.45  | 0.12628  | $47.45 (fee $0)  | keep (≥$25)   | NOT PLACED  |
+| VXUS   | BUY  | +23.73  | —        | —                | DROP (<$25)   | not planned |
+| BIL    | BUY  | +7.91   | —        | —                | DROP (<$25)   | not planned |
+
+- Only VTI survives the dust filter. Run notional $47.45 (MAX_RUN $10,000 ✓,
+  MAX_order $2,500 ✓). No SELLs generated: spec computes Δ for target symbols
+  only and does not liquidate off-target holdings (SMH, crypto).
+
+**⚠️ BLOCKER (would fail a live run):**
+The lone planned buy (VTI $47.45) requires $47.45 buying power; account buying
+power and cash are both $0.00 — 100% of value ($78.58) is in off-target SMH.
+A live run would place **zero fundable orders**. This is a standing config
+problem, recurring across runs: TARGET_ALLOCATION (VTI/VXUS/BIL) has no overlap
+with actual holdings, and the routine never sells off-target positions.
+Recommendation (pick one): (a) add held symbols as SELLs so proceeds fund the
+targets; (b) manually sell SMH first, then let the routine deploy the cash;
+or (c) revise TARGET_ALLOCATION to reflect what you actually intend to hold.
+Do NOT flip DRY_RUN=FALSE until this is resolved — nothing would execute anyway.
+
+### Sweep to HYSA (Step 7)
+- S = $0.00 → nothing to sweep this run.
+
+**Errors:** none (all tool calls succeeded). Blocker is a funding/config issue,
+not a tool error.
+
+NEXT RUN: 2026-11-02 (Mon) — DRY_RUN. Note: DST ends 2026-11-01, so the
+16:08 UTC trigger = 11:08 EST, still within 09:30–16:00 ET.
